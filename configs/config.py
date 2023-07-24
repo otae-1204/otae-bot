@@ -21,4 +21,4 @@ database: str = ""  # 数据库名称
 SYSTEM_PROXY: Optional[str] = None  # 全局代理
 
 
-Config = ConfigsManager(Path() / "data" / "configs" / "plugins2config.yaml")
+Config = ConfigsManager(Path() / "configs" / "plugins2config.yaml")

@@ -1,16 +1,7 @@
-from logging import Logger
-from re import T
 from PIL import Image
-from flask import redirect
-from matplotlib.pyplot import loglog
 from nonebot import logger
-from src.plugins.HottaHelper.dbUtil import databaseDao
 from utils.image_utils import BuildImage
 from configs.path_config import IMAGE_PATH
-
-
-log = Logger("幻塔助手")
-
 
 def WeaponImg(
     weapons: dict

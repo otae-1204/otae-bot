@@ -1,0 +1,11 @@
+httpx==0.24.1
+ImageHash==4.2.1
+matplotlib==3.3.3
+nonebot-adapter-onebot==2.2.1
+nonebot-plugin-apscheduler==0.3.0
+nonebot2==2.0.0
+playwright==1.30.0
+PyMySQL==1.1.0
+python-office==0.3.19
+requests==2.31.0
+ruamel.yaml==0.17.32

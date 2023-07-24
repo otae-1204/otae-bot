@@ -16,6 +16,8 @@ playwright = "1.30.0"
 imagehash = "4.2.1"
 matplotlib = "3.3.3"
 "ruamel.yaml" = "^0.17.10"
+httpx = "^0.18.2"
+nonebot_plugin_apscheduler = "^0.1.0"
 
 [tool.nonebot]
 plugins = []

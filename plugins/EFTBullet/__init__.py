@@ -20,49 +20,48 @@ caliberEpithet = {
     "12.7": ["127"],
     "4.7": ["47"],
     "7.62x51": ["762x51", ".308", "NATO"]
-
 }
 
 
 @selectBullet.handle()
 async def hand(event: Event):
+    # 获取输入内容
     count = str(event.message).split(" ")[1:]
-    print(count)
-    print(type(count))
-    # print(count)
-    # await selectbullet.finish(str(count))
-    if count[0] is not None or count[1] is not None:
-        qqid = event.get_user_id()
-        names = count[0].strip().split(" ") if count[0] is not None else count[1].strip().split(" ")
-        for j in names:
-            j = j.replace("_", " ")
-        db = DatabaseDao()
 
-        for i in range(0,len(names)):
-            if "+" in names[i]:
-                names[i] = names[i].split("+")
-        print(names)
-        data = []
-        for i in names:
-            print(type(i))
-            if type(i) == list:
-                data += db.selectAmmoByDiverse(i)
-            else:
-                data += db.selectAmmoByOneCondition(i)
-        if len(data) == 1:
-            imgResult = build_ammo_info(data[0], qqid)
-        else:
-            imgResult = build_ammo_image(data, qqid)
-        if imgResult == 1:
-            await selectBullet.finish(at(qqid) + image(f"{IMAGE_PATH}/tkf-bullet/{qqid}.png"))
-        elif imgResult == 0:
-            await selectBullet.finish(at(qqid) + image(f"{IMAGE_PATH}/tkf-bullet/无数据.png"))
-        else:
-            await selectBullet.finish("查询出现问题,请联系开发者修复")
-
-# @selectBulletArmorDamage.handle()
-# async def hand(event: Event):
+    # 非空判断
+    if len(count) == 0:
+        await selectBullet.finish("请输入子弹名称或条件")
     
+    # 获取用户QQ号
+    qqid = event.get_user_id()
+
+    # 分割使用交集的查询与替换文本中的"_"为空格
+    ammoNames = [name.replace("_", " ").split("+") if "_" in name or "+" in name else name for name in count]
+
+    # 获取数据库对象
+    db = DatabaseDao()
+    data = []
+
+    # 判断子弹名称是否为多个
+    for name in ammoNames:
+        if type(name) == list:
+            data += db.selectAmmoByDiverse(name)
+        else:
+            data += db.selectAmmoByOneCondition(name)
+    
+    # 判断是否绘制详细信息
+    if len(data) == 1:
+        imgResult = build_ammo_info(data[0], qqid)
+    else:
+        imgResult = build_ammo_image(data, qqid)
+    
+    # 判断绘制结果 1:成功 0:无数据 -1:失败
+    if imgResult == 1:
+        await selectBullet.finish(at(qqid) + image(f"{IMAGE_PATH}/tkf-bullet/{qqid}.png"))
+    elif imgResult == 0:
+        await selectBullet.finish(at(qqid) + image(f"{IMAGE_PATH}/tkf-bullet/无数据.png"))
+    else:
+        await selectBullet.finish("查询出现问题,请联系开发者修复")
 
 @updateBullet.handle()
 async def hand(event: Event):
