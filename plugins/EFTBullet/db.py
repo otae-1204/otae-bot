@@ -56,80 +56,67 @@ lessThan = ["<","＜"]
 # 等于号兼容全角
 equal = ["=","＝"]
 
+
+caliber_mapping = {
+    "7.62x25毫米TT": ("7.62x25mm", "TT"),
+    "9x18毫米PM": ("9x18mm", "PM"),
+    "40毫米VOG-25榴弹": ("其他", "40mm VOG-25榴弹"),
+    "Express": ("", "Express"),
+    "Magnum": ("", "Magnum"),
+    "Poleva-6u": ("", "Poleva-6u"),
+    "Poleva-3": ("", "Poleva-3"),
+    "Poleva-3u": ("", "Poleva-3u"),
+    "Copper": ("", "Copper"),
+    ".50": ("", ".50"),
+    "SuperFormance": ("SuperFormance", ""),
+    "Dual": ("", "Dual"),
+    "9x19": ("9x19mm", ""),
+    "7.62x51": ("7.62x51mm", ""),
+    "40x46": ("40x46mm", ""),
+    ".338": ("", ".338"),
+    ".357": (".357", ""),
+    ".338 UPZ": (".338", "UPZ"),
+    # 添加更多弹药类型的处理方式...
+}
+
+
 def updateAmmoData() -> int:
     try:
         db = DatabaseDao()
 
-        # 删除旧数据
-        # db.deleteAmmo()
+        # 浏览器头
         headers = {"Content-Type": "application/json"}
+
         # 获取中文数据
         response = requests.post('https://api.tarkov.dev/graphql',
                                  json={'query': query_cn}, headers=headers, timeout=30)
+        
+        # 判断是否成功
         if response.status_code == 200:
             cnData = response.json()
         else:
             raise Exception("查询无法运行，返回的代码为 {}. {}".format(
                 response.status_code, query_cn))
 
+
         for i in cnData['data']['ammo']:
-            print(i["item"]["name"])
-            # 0 = 口径
-            # 1 = 名称
             calibers = i["item"]["name"].split(" ")
-            calibers[0] = calibers[0].replace("“", "").replace("”", "")
-            if calibers[0] == "7.62x25毫米TT":
-                caliber = calibers[0].replace("T", "").replace("毫米", "mm")
-                name = "TT " + calibers[1]
-            elif calibers[0] == "9x18毫米PM":
-                caliber = calibers[0].replace("PM", "").replace("毫米", "mm")
-                name = "PM " + calibers[1]
-            elif calibers[0] == "40毫米VOG-25榴弹":
-                caliber = "其他"
-                name = calibers[0]
-            elif calibers[0] == "Express" or calibers[0] == "Magnum":
-                caliber = calibers[1]
-                name = calibers[2]
-                calibers.pop(2)
-            elif calibers[0] == "Poleva-6u" or calibers[0] == "Poleva-3" or calibers[0] == "Poleva-3u":
-                caliber = calibers[1].replace("独头弹", "")
-                name = calibers[0]
-            elif calibers[0] == "Copper":
-                caliber = calibers[3]
-                name = calibers[0] + " " + calibers[1] + \
-                       " " + calibers[2]
-            elif calibers[0] == ".50":
-                caliber = calibers[2].replace("弹", "")
-                name = calibers[0] + " " + calibers[1]
-            elif calibers[0] == "SuperFormance":
-                caliber = calibers[1]
-                name = calibers[0]
-            elif calibers[0] == "Dual":
-                caliber = calibers[2].replace("独头弹", "")
-                name = calibers[0] + " " + calibers[1]
-            elif calibers[0] == "9x19" or calibers[0] == "7.62x51" or calibers[0] == "40x46":
-                caliber = calibers[0] + calibers[1].replace("毫米", "mm")
-                name = calibers[2]
-            elif calibers[0] == ".338" and calibers[1] != "UPZ":
-                caliber = calibers[0] + " " + calibers[1] + " " + calibers[2]
-                name = calibers[3]
-            elif calibers[0] == ".338" and calibers[1] == "UPZ":
-                caliber = calibers[0] + " " + calibers[2] + " " + calibers[3]
-                name = "UPZ"
+            calibers[0] = clean_caliber(calibers[0])
+
+            if calibers[0] in caliber_mapping:
+                caliber, name = caliber_mapping[calibers[0]]
             elif calibers[0] == ".357":
                 caliber = calibers[0] + " " + calibers[1]
-                name = ""
-                for j in range(2, len(calibers)):
-                    name = name + calibers[j] + " "
+                name = " ".join([clean_name(calibers[j]) for j in range(2, len(calibers))])
             elif calibers[0].split("燃烧")[0].split("毫米")[0] == "26x75":
                 caliber = "26x75"
                 name = calibers[0].replace("26x75燃烧", "").replace("26x75毫米", "").replace("（", "(").replace("）", ")")
             else:
-                caliber = calibers[0].replace("毫米", "mm")
-                name = ""
-                for j in range(1, len(calibers)):
-                    name = name + calibers[j].replace("M62曳光弹", "M62").replace("独头弹", "") + " "
+                # 默认情况，去除毫米并保留原名
+                caliber = calibers[0]
+                name = " ".join([clean_name(calibers[j]) for j in range(1, len(calibers))])
 
+            # 创建子弹信息对象
             new_ammo = Ammo(
                 id = None,
                 name=name,
@@ -154,8 +141,8 @@ def updateAmmoData() -> int:
                 initialSpeed=i["initialSpeed"],
                 staminaBurnPerDamage= round(i["staminaBurnPerDamage"],3)
             )
-            # print(type(new_ammo.staminaBurnPerDamage))
-            # print(new_ammo.staminaBurnPerDamage)
+
+            # 判断子弹是否存在
             ammoId = db.selectAmmo(new_ammo)
             if ammoId > 0:
                 db.updateAmmo(ammoId, new_ammo)
@@ -172,6 +159,15 @@ def updateAmmoData() -> int:
         return -1
 
 
+# 更改口径
+def clean_caliber(caliber_str):
+    return caliber_str.replace("“", "").replace("”", "").replace("毫米", "mm")
+
+# 更改名称
+def clean_name(name_str):
+    return name_str.replace("独头弹", "").replace("M62曳光弹", "M62")
+
+# 数据库操作类
 class DatabaseDao:
     conn = None
     cursor = None

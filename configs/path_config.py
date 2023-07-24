@@ -7,7 +7,7 @@ VOICE_PATH = Path("res/voice/")
 # 文本路径
 TEXT_PATH = Path("res/txt/")
 # 日志路径
-LOG_PATH = Path("log/")
+# LOG_PATH = Path("log/")
 # 字体路径
 FONT_PATH = Path("res/ttf/")
 # 临时图片路径
@@ -23,7 +23,7 @@ def init_path():
     IMAGE_PATH.mkdir(parents=True, exist_ok=True)
     VOICE_PATH.mkdir(parents=True, exist_ok=True)
     TEXT_PATH.mkdir(parents=True, exist_ok=True)
-    LOG_PATH.mkdir(parents=True, exist_ok=True)
+    # LOG_PATH.mkdir(parents=True, exist_ok=True)
     FONT_PATH.mkdir(parents=True, exist_ok=True)
     TEMP_PATH.mkdir(parents=True, exist_ok=True)
     JSON_PATH.mkdir(parents=True, exist_ok=True)
@@ -31,7 +31,7 @@ def init_path():
     IMAGE_PATH = str(IMAGE_PATH.absolute()) + '/'
     VOICE_PATH = str(VOICE_PATH.absolute()) + '/'
     TEXT_PATH = str(TEXT_PATH.absolute()) + '/'
-    LOG_PATH = str(LOG_PATH.absolute()) + '/'
+    # LOG_PATH = str(LOG_PATH.absolute()) + '/'
     FONT_PATH = str(FONT_PATH.absolute()) + '/'
     TEMP_PATH = str(TEMP_PATH.absolute()) + '/'
     JSON_PATH = str(JSON_PATH.absolute()) + '/'

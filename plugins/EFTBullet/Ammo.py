@@ -1,3 +1,4 @@
+# 子弹信息类
 class Ammo:
     id: int  # id
     name: str  # 名称
@@ -10,7 +11,7 @@ class Ammo:
     armorDamage: float  # 护甲伤害
     fragmentationChance: float  # 碎弹几率
     ricochetChance: float  # 跳弹几率
-    penetrationPower: int  # 穿甲力、
+    penetrationPower: int  # 穿甲力
     accuracyModifier: float  # 精度修正
     recoilModifier: float  # 后坐力修正
     lightBleedModifier: float  # 小出血修正
@@ -22,6 +23,7 @@ class Ammo:
     initialSpeed : float # 初速
     staminaBurnPerDamage : float # 消耗体力
 
+    # 构造函数
     def __init__(self, id, name, caliber, weight, stackMaxSize, tracer, tracerColor, damage, armorDamage,
                  fragmentationChance, ricochetChance, penetrationPower, accuracyModifier, recoilModifier,
                  lightBleedModifier, heavyBleedModifier, img, marketSale,apiID,projectileCount,initialSpeed,staminaBurnPerDamage):
@@ -48,19 +50,21 @@ class Ammo:
         self.initialSpeed = initialSpeed
         self.staminaBurnPerDamage = staminaBurnPerDamage
 
-
+# 购买来源
 class BuyFor:
     price: int  # 价格
     currency: str  # 货币
     priceRUB: int  # 价格（卢布）
     source: str  # 来源
 
+# 合成来源
 class CraftsFor:
     name : str # 名称
     level : int # 等级
     duration : int # 时间
     requirements : list[dict] # 材料 dict(name, count)
 
+# 子弹详细信息类
 class AmmoMoreInfo:
     basePrice: int  # 基础价格
     avg24hPrice: int  # 24小时平均价格
