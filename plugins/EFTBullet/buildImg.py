@@ -1,5 +1,7 @@
 from utils.image_utils import BuildImage
 from configs.path_config import IMAGE_PATH
+from .Ammo import AmmoMoreInfo
+
 
 path = IMAGE_PATH + 'tkf-bullet/'
 
@@ -157,14 +159,42 @@ def build_ammo_image(ammos, qqId) -> int:
         return -1
 
 
-def build_ammo_info(ammos, qqId) -> int:
+def build_ammo_info(ammosInfo, ammoMoreInfo: AmmoMoreInfo, qqId) -> int:
     try:
-        if len(ammos) == 0:
+        if len(ammosInfo) == 0:
+            # 获取画布宽度 30 + 30 + 340
+            bgw = 400
+            
+            # 获取画布高度 顶外高 + 列高(280 + 30 + 商人获取渠道数*100 + 工作台获取渠道数*150) + 底外高
+            bgh = 120 + 280 + 30 + len(ammoMoreInfo.buyFor) + len(ammoMoreInfo.craftsFor) + 30
+            
+            # 创建画布
+            bg = BuildImage(w=bgw, h=bgh)
+
+            # 填充背景图片
+            bg1 = BuildImage(w=0, h=0, background=path + 'bg.png')
+            xn = 0 if bg.w <= 792 else int(bg.w / 792)
+            yn = 0 if bg.h <= 792 else int(bg.h / 792)
+            for i in range(0, xn + 1):
+                for j in range(0, yn + 1):
+                    bg.paste(bg1, (i * 792, j * 792))
+
+            # 绘制标题
+            bg.paste(pos=(20, 30), img=BuildImage(w=0, h=0, background=path + "查询子弹子标题.png"), alpha=True)
+
+            # 绘制信息背景
+            infoBg = BuildImage(w=bgw - 60, h=280, color=(161, 198, 234))
+
+
+            
+
+
+            
             return 0
     except Exception as e:
         print(e)
         return 0
-
+    
 
 #
 # ammo = Ammo("M856", "7.62x51", 1, 2, False, "green",

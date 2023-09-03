@@ -3,6 +3,7 @@ from configs.path_config import IMAGE_PATH
 import pymysql
 import office
 from .Ammo import Ammo
+import os
 
 path = IMAGE_PATH + 'tkf-bullet/'
 
@@ -146,6 +147,15 @@ def updateAmmoData() -> int:
             ammoId = db.selectAmmo(new_ammo)
             if ammoId > 0:
                 db.updateAmmo(ammoId, new_ammo)
+                # 删除旧图片
+                os.remove(path + "bullet/" + caliber.replace("毫米", "mm").replace("/", "_").replace('"', "") + " " + name.rstrip().replace('"', "") + ".png")
+                # 下载新图片
+                office.image.down4img(
+                    url=i["item"]["iconLink"],
+                    output_name=caliber.replace("毫米", "mm").replace("/", "_").replace('"', "") + " " + name.rstrip().replace('"', ""),
+                    output_path=path + "bullet/",
+                    type='png')
+
             else:
                 db.insertAmmo(new_ammo)
                 office.image.down4img(
@@ -157,7 +167,6 @@ def updateAmmoData() -> int:
     except Exception as e:
         print(e)
         return -1
-
 
 # 更改口径
 def clean_caliber(caliber_str):
