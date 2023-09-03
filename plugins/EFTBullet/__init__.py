@@ -7,6 +7,8 @@ from .db import DatabaseDao
 from .buildImg import build_ammo_image, build_ammo_info
 from utils.message_builder import at, image
 from configs.path_config import IMAGE_PATH
+import requests
+from .Ammo import AmmoMoreInfo, CraftsFor, BuyFor
 
 ALL_PERMISSION = GROUP_ADMIN | GROUP_OWNER | SUPERUSER
 
@@ -21,6 +23,10 @@ caliberEpithet = {
     "4.7": ["47"],
     "7.62x51": ["762x51", ".308", "NATO"]
 }
+
+
+
+
 
 
 @selectBullet.handle()
@@ -51,6 +57,69 @@ async def hand(event: Event):
     
     # 判断是否绘制详细信息
     if len(data) == 1:
+        query_cn = """
+{
+  items(ids:"{}",lang:zh){
+    name #名称
+    basePrice #基础价格
+    avg24hPrice #24小时平均价格
+    buyFor { #购买地点
+        price #价格
+        currency #货币
+        priceRUB #价格
+        source #来源
+      }
+    craftsFor { #合成
+        id #合成id
+        station { 
+          name #合成台名称
+        }
+        level #合成等级
+        duration #合成时间
+        requiredItems { #合成所需物品
+          item { 
+            name #物品名称
+          }
+          count #数量
+        }
+    }
+  }
+}
+""".format(data[0]["apiID"])
+        
+        # 浏览器头
+        headers = {"Content-Type": "application/json"}
+
+        # 获取中文数据
+        response = requests.post('https://api.tarkov.dev/graphql',
+                                 json={'query': query_cn}, headers=headers, timeout=30)
+        
+        # 判断是否成功
+        if response.status_code == 200:
+            # 获取数据
+            data = response.json()["data"]["items"][0]
+            # 获取购买来源
+            buyFor = []
+            for buy in data["buyFor"]:
+                buyFor.append(BuyFor(buy["price"], buy["currency"], buy["priceRUB"], buy["source"]))
+            # 获取合成来源
+            craftsFor = []
+            for craft in data["craftsFor"]:
+                requirements = []
+                for requirement in craft["requiredItems"]:
+                    requirements.append({requirement["item"]["name"]:requirement["count"]})
+                craftsFor.append(CraftsFor(craft["station"]["name"], craft["level"], craft["duration"], requirements))
+            
+            # 构建详细信息对象
+            ammoMoreInfo = AmmoMoreInfo(data["basePrice"], data["avg24hPrice"], buyFor, craftsFor)
+
+            # 绘制图片
+            imgResult = build_ammo_info(data, ammoMoreInfo, qqid)
+        else:
+            imgResult = build_ammo_image(data, qqid)
+
+
+
         imgResult = build_ammo_info(data[0], qqid)
     else:
         imgResult = build_ammo_image(data, qqid)

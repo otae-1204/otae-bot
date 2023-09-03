@@ -57,6 +57,13 @@ class BuyFor:
     priceRUB: int  # 价格（卢布）
     source: str  # 来源
 
+    # 构造函数
+    def __init__(self, price, currency, priceRUB, source):
+        self.price = price
+        self.currency = currency
+        self.priceRUB = priceRUB
+        self.source = source
+
 # 合成来源
 class CraftsFor:
     name : str # 名称
@@ -64,9 +71,23 @@ class CraftsFor:
     duration : int # 时间
     requirements : list[dict] # 材料 dict(name, count)
 
+    # 构造函数
+    def __init__(self, name, level, duration, requirements):
+        self.name = name
+        self.level = level
+        self.duration = duration
+        self.requirements = requirements
+
 # 子弹详细信息类
 class AmmoMoreInfo:
     basePrice: int  # 基础价格
     avg24hPrice: int  # 24小时平均价格
     buyFor: list[BuyFor]  # 购买来源
     craftsFor: list[CraftsFor]  # 合成来源
+
+    # 构造函数
+    def __init__(self, basePrice, avg24hPrice, buyFor, craftsFor):
+        self.basePrice = basePrice
+        self.avg24hPrice = avg24hPrice
+        self.buyFor = buyFor
+        self.craftsFor = craftsFor
