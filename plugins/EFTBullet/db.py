@@ -92,7 +92,7 @@ def query_task_name(taskId):
         print(f"请求失败,错误代码{response.status_code}")
         return -1
     print(result)
-    return result["data"]["task"]["name"]
+    return result["data"]["task"]["name"] 
 
 def clean_caliber(caliber_str: str) -> str:
     """清理和格式化弹药的口径字符串."""
@@ -146,20 +146,22 @@ def process_ammo_data(db, ammo_data) -> int:
                 projectileCount=i["projectileCount"],
                 initialSpeed=i["initialSpeed"],
                 staminaBurnPerDamage= round(i["staminaBurnPerDamage"],3)
-            )
+            )       
 
             ammo_id = db.selectAmmo(new_ammo)
             if ammo_id > 0:
                 db.updateAmmo(ammo_id, new_ammo)
                 # 删除旧图片
                 image_path = os.path.join(path, "bullet", caliber.replace("毫米", "mm").replace("/", "_").replace('"', "") + " " + name.rstrip().replace('"', "") + ".png")
-                # os.remove(image_path)
+                if os.path.exists(image_path):
+                    os.remove(image_path)
                 # 下载新图片
                 result = requests.get(i["item"]["iconLink"], timeout=30, proxies=SYSTEM_PROXY)
                 if result.status_code == 200:
                     img_path = caliber.replace("毫米", "mm").replace("/", "_").replace('"', "") + " " + name.rstrip().replace('"', "")
                     with open(path + f"bullet/{img_path}.png", 'wb') as f:
                         f.write(result.content)
+                    print(f"更新{img_path}成功")
                 else:
                     print(f"请求失败,错误代码{result.status_code}")
                     return -1
@@ -171,6 +173,7 @@ def process_ammo_data(db, ammo_data) -> int:
                     img_path = caliber.replace("毫米", "mm").replace("/", "_").replace('"', "") + " " + name.rstrip().replace('"', "")
                     with open(path + f"bullet/{img_path}.png", 'wb') as f:
                         f.write(result.content)
+                    print(f"下载{img_path}成功")
                 else:
                     print(f"请求失败,错误代码{result.status_code}")
                     return -1
@@ -184,7 +187,7 @@ def updateAmmoData() -> int:
     try:
         db = DatabaseDao()
         headers = {"Content-Type": "application/json"}
-        response = requests.post('https://api.tarkov.dev/graphql', json={'query': query_cn}, headers=headers, timeout=30)
+        response = requests.post('https://api.tarkov.dev/graphql', json={'query': query_cn}, headers=headers, timeout=30, proxies=SYSTEM_PROXY)
         if response.status_code == 200:
             cnData = response.json()
         else:
@@ -524,7 +527,7 @@ class DatabaseDao:
                 sqlEx = "%" + condition[1:].replace("*","x").replace("×","x").replace("＊","x") + "%"
                 sql += f' where caliber like "{sqlEx}"'
             elif condition[:1] in idStart:
-                sqlEx = "%" + condition[1:] + "%"
+                sqlEx = condition[1:]
                 sql += f' where id = "{sqlEx}"'
             elif condition[:1] in damageStart:
                 if condition[1:2] in greaterThan:

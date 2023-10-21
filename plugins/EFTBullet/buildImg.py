@@ -169,7 +169,7 @@ def build_ammo_info(ammoInfo, ammoMoreInfo: AmmoMoreInfo, qqId) -> int:
             bgw = 393
 
             # 获取画布高度 顶外高 + 列高(280 + 30 + 商人获取渠道数*110 + 工作台获取渠道数*135) + 底外高
-            bgh = 120 + 220 + 20 + len(ammoMoreInfo.buyFor)*110 + len(ammoMoreInfo.craftsFor)*135 + 30
+            bgh = 120 + 240 + 20 + len(ammoMoreInfo.buyFor)*85 + len(ammoMoreInfo.craftsFor)*135 + 35 + 30
             
             # 创建画布
             bg = BuildImage(w=bgw, h=bgh, color=(55, 55, 55),font="default.ttf", font_size=15)
@@ -214,7 +214,7 @@ def build_ammo_info(ammoInfo, ammoMoreInfo: AmmoMoreInfo, qqId) -> int:
             # 绘制子弹图片
             img = BuildImage(w=0, h=0, background=path + f"bullet/{ammoInfo.img}")
             img.circle_corner(6)
-            bg.paste(pos=(55, 183), img=img, alpha=True)
+            bg.paste(pos=(55, 183), img=img, alpha=True)        
 
             # 绘制子弹名称
             name = BuildImage(w=0, h=0, font="default.ttf", font_size=12, plain_text="名称 " + ammoInfo.name, is_alpha=True, font_color=(55, 55, 55))
@@ -226,7 +226,7 @@ def build_ammo_info(ammoInfo, ammoMoreInfo: AmmoMoreInfo, qqId) -> int:
 
             # 绘制子弹类型
             typeName = ""
-            damageList = ammoInfo.damage.split("x")
+            damageList = ammoInfo.damage.split("x") if type(ammoInfo.damage) == str else [ammoInfo.damage]
             if len(damageList) == 2:
                 damage = damageList[0] * damageList[1]
             else:
@@ -235,15 +235,15 @@ def build_ammo_info(ammoInfo, ammoMoreInfo: AmmoMoreInfo, qqId) -> int:
             typeName += "高级穿甲弹 " if ammoInfo.penetrationPower >= 50 and ammoInfo.penetrationPower < 60 else ""
             typeName += "顶级穿甲弹 " if ammoInfo.penetrationPower >= 60 else ""
             typeName += "亚音速弹" if ammoInfo.initialSpeed < 340 else ""
-            type = BuildImage(w=0, h=0, font="default.ttf", font_size=12, plain_text="类型 " + typeName, is_alpha=True, font_color=(55, 55, 55))
-            bg.paste(type, (133, 228),alpha=True)
+            typeImg = BuildImage(w=0, h=0, font="default.ttf", font_size=12, plain_text="类型 " + typeName, is_alpha=True, font_color=(55, 55, 55))
+            bg.paste(typeImg, (133, 228),alpha=True)
 
             # 绘制子弹id
             id = BuildImage(w=0, h=0, font="default.ttf", font_size=10, plain_text="id: " + str(ammoInfo.id), is_alpha=True, font_color=(60, 60, 60))
             bg.paste(id, (60, 247),alpha=True)
             
             # 绘制子弹肉伤
-            damage = BuildImage(w=0, h=0, font="default.ttf", font_size=12, plain_text="子弹肉伤 " + ammoInfo.damage, is_alpha=True, font_color=(55, 55, 55))
+            damage = BuildImage(w=0, h=0, font="default.ttf", font_size=12, plain_text="子弹肉伤 " + str(ammoInfo.damage), is_alpha=True, font_color=(55, 55, 55))
             bg.paste(damage, (47, 270),alpha=True)
 
             # 绘制子弹穿甲
@@ -339,7 +339,7 @@ def build_ammo_info(ammoInfo, ammoMoreInfo: AmmoMoreInfo, qqId) -> int:
                 level = ammoMoreInfo.buyFor[i].requirements[0]["value"]
 
                 # 判断头像文件是否存在
-                if os.path.exists(path + f"UI/{ammoMoreInfo.buyFor[i].source.capitalize()}-{level}.png"):
+                if not os.path.exists(path + f"traders/{ammoMoreInfo.buyFor[i].source.capitalize()}-{level}.png"):
                     if DLTradersLevelsImg() == -1:
                         return -1
                 
@@ -356,7 +356,8 @@ def build_ammo_info(ammoInfo, ammoMoreInfo: AmmoMoreInfo, qqId) -> int:
                 # 绘制任务需求
                 taskRequirements = ""
                 for j in range(0,len(ammoMoreInfo.buyFor[i].requirements)):
-                    if ammoMoreInfo.buyFor[i].requirements[j]["stringValue"] != "null":
+                    print(ammoMoreInfo.buyFor[i].requirements[j]["stringValue"])
+                    if ammoMoreInfo.buyFor[i].requirements[j]["stringValue"] != None:
                         try:
                             data = query_task_name(ammoMoreInfo.buyFor[i].requirements[j]["stringValue"])
                         except Exception as e:
@@ -371,7 +372,9 @@ def build_ammo_info(ammoInfo, ammoMoreInfo: AmmoMoreInfo, qqId) -> int:
                             taskRequirements += " " + data
                     else:
                         taskRequirements = "无"
-                buyForRequirements = BuildImage(w=0, h=0, font="default.ttf", font_size=14, plain_text=f"任务需求 {taskRequirements}",is_alpha=True, font_color=(55, 55, 55))
+
+                text = "任务需求 " + taskRequirements if ammoMoreInfo.buyFor[i].source != "fleaMarket" else "24h均价 " + str(ammoMoreInfo.avg24hPrice)
+                buyForRequirements = BuildImage(w=0, h=0, font="default.ttf", font_size=14, plain_text=text, is_alpha=True, font_color=(55, 55, 55))
                 bg.paste(buyForRequirements, (125, 427 + i * 82),alpha=True)
 
                 # 绘制价格
@@ -393,6 +396,7 @@ def build_ammo_info(ammoInfo, ammoMoreInfo: AmmoMoreInfo, qqId) -> int:
                     craftPath = path + f"craft/{ammoMoreInfo.craftsFor[i].name}.png"
                 else:
                     craftPath = path + f"craft/error.png"
+                    print(f"ERROR: {ammoMoreInfo.craftsFor[i].name} 图片不存在")
                 craftsForIcon = BuildImage(w=64, h=64, background = craftPath)
                 bg.paste(craftsForIcon, (48, 430 + len(ammoMoreInfo.buyFor) * 82 + i * 135),alpha=True)
                 
@@ -454,7 +458,7 @@ traders {
 }
 }
 """
-    response = requests.post('https://api.tarkov.dev/graphql', json={'query': query_str}, headers=get_user_agent(), timeout=30)
+    response = requests.post('https://api.tarkov.dev/graphql', json={'query': query_str}, headers=get_user_agent(), timeout=30, proxies=SYSTEM_PROXY)
     if response.status_code == 200:
         result = response.json()
     else:
