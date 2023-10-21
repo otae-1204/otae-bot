@@ -50,19 +50,22 @@ class Ammo:
         self.initialSpeed = initialSpeed
         self.staminaBurnPerDamage = staminaBurnPerDamage
 
+
 # 购买来源
 class BuyFor:
     price: int  # 价格
     currency: str  # 货币
     priceRUB: int  # 价格（卢布）
     source: str  # 来源
+    requirements: list  # 材料 dict
 
     # 构造函数
-    def __init__(self, price, currency, priceRUB, source):
+    def __init__(self, price, currency, priceRUB, source, requirements):
         self.price = price
         self.currency = currency
         self.priceRUB = priceRUB
         self.source = source
+        self.requirements = requirements
 
 # 合成来源
 class CraftsFor:
