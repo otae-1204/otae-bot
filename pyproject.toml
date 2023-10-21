@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.7.3"
-nonebot2 = ">=2.0.0"
+nonebot2 = ">=2.0.0-beta.5"
 nonebot-adapter-onebot = ">=2.2.1"
 requests = "^2.22.0"
 pymysql = "^0.9.3"
@@ -22,6 +22,7 @@ nonebot_plugin_apscheduler = "^0.1.0"
 [tool.nonebot]
 plugins = []
 plugin_dirs = ["plugins"]
+load_plugins = ["nonebot_plugin_apscheduler"]
 
 [build-system]
 requires = ["poetry_core>=1.0.0"]

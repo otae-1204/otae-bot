@@ -23,6 +23,7 @@ driver.register_adapter(ONEBOT_V11Adapter)
 # Please DO NOT modify this file unless you know what you are doing!
 # As an alternative, you should use command `nb` or modify `pyproject.toml` to load plugins
 nonebot.load_from_toml("pyproject.toml")
+nonebot.load_builtin_plugins("echo")
 
 # Modify some config / config depends on loaded configs
 #
@@ -32,5 +33,5 @@ nonebot.load_from_toml("pyproject.toml")
 
 if __name__ == "__main__":
     #nonebot.run()
-    nonebot.logger.warning("Always use `nb run` to start the bot instead of manually running!")
+    # nonebot.logger.warning("Always use `nb run` to start the bot instead of manually running!")
     nonebot.run(app="__mp_main__:app")

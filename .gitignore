@@ -4,4 +4,4 @@ __pycache__/
 .gitgnore
 .gitattributes
 .idea/
-.Test/
+Test/

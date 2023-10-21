@@ -18,7 +18,7 @@ port: str = ""  # 数据库端口
 database: str = ""  # 数据库名称
 
 # 代理，例如 "http://127.0.0.1:7890"
-SYSTEM_PROXY: Optional[str] = None  # 全局代理
+SYSTEM_PROXY: Optional[str] = {"https":"https://127.0.0.1:7890","http":"http://127.0.0.1:7890"}  # 全局代理
 
 
 Config = ConfigsManager(Path() / "configs" / "plugins2config.yaml")
