@@ -7,7 +7,7 @@ from .db import DatabaseDao
 from .buildImg import build_ammo_image, build_ammo_info
 from utils.message_builder import at, image
 from configs.path_config import IMAGE_PATH
-import requests
+import requests, os
 from .Ammo import AmmoMoreInfo, CraftsFor, BuyFor
 
 ALL_PERMISSION = GROUP_ADMIN | GROUP_OWNER | SUPERUSER
@@ -25,10 +25,6 @@ caliberEpithet = {
 }
 
 
-
-
-
-
 @selectBullet.handle()
 async def hand(event: Event):
     # 获取输入内容
@@ -37,7 +33,7 @@ async def hand(event: Event):
     # 非空判断
     if len(count) == 0:
         await selectBullet.finish("请输入子弹名称或条件")
-    
+
     # 获取用户QQ号
     qqid = event.get_user_id()
 
@@ -54,7 +50,7 @@ async def hand(event: Event):
             data += db.selectAmmoByDiverse(name)
         else:
             data += db.selectAmmoByOneCondition(name)
-    
+
     # 判断是否绘制详细信息
     if len(data) == 1:
         query_cn = """
@@ -71,13 +67,13 @@ async def hand(event: Event):
       }
     craftsFor { #合成
         id #合成id
-        station { 
+        station {
           name #合成台名称
         }
         level #合成等级
         duration #合成时间
         requiredItems { #合成所需物品
-          item { 
+          item {
             name #物品名称
           }
           count #数量
@@ -86,14 +82,14 @@ async def hand(event: Event):
   }
 }
 """.format(data[0]["apiID"])
-        
+
         # 浏览器头
         headers = {"Content-Type": "application/json"}
 
         # 获取中文数据
         response = requests.post('https://api.tarkov.dev/graphql',
                                  json={'query': query_cn}, headers=headers, timeout=30)
-        
+
         # 判断是否成功
         if response.status_code == 200:
             # 获取数据
@@ -109,26 +105,24 @@ async def hand(event: Event):
                 for requirement in craft["requiredItems"]:
                     requirements.append({requirement["item"]["name"]:requirement["count"]})
                 craftsFor.append(CraftsFor(craft["station"]["name"], craft["level"], craft["duration"], requirements))
-            
+
             # 构建详细信息对象
             ammoMoreInfo = AmmoMoreInfo(data["basePrice"], data["avg24hPrice"], buyFor, craftsFor)
 
             # 绘制图片
-            imgResult = build_ammo_info(data, ammoMoreInfo, qqid)
+            imgResult = (data, ammoMoreInfo, qqid)
         else:
-            imgResult = build_ammo_image(data, qqid)
-
-
-
-        imgResult = build_ammo_info(data[0], qqid)
+            await selectBullet.finish("查询出现问题,请联系开发者修复")
     else:
         imgResult = build_ammo_image(data, qqid)
-    
+
     # 判断绘制结果 1:成功 0:无数据 -1:失败
     if imgResult == 1:
-        await selectBullet.finish(at(qqid) + image(f"{IMAGE_PATH}/tkf-bullet/{qqid}.png"))
+        await selectBullet.send(at(qqid) + image(f"{IMAGE_PATH}/tkf-bullet/img/{qqid}.png"))
+        os.remove(f"{IMAGE_PATH}/tkf-bullet/{qqid}.png")
+        return
     elif imgResult == 0:
-        await selectBullet.finish(at(qqid) + image(f"{IMAGE_PATH}/tkf-bullet/无数据.png"))
+        await selectBullet.finish(at(qqid) + image(f"{IMAGE_PATH}/tkf-bullet/img/无数据.png"))
     else:
         await selectBullet.finish("查询出现问题,请联系开发者修复")
 

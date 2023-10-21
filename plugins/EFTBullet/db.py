@@ -1,9 +1,10 @@
 import requests
 from configs.path_config import IMAGE_PATH
 import pymysql
-import office
 from .Ammo import Ammo
 import os
+from utils.user_agent import get_user_agent
+from configs.config import SYSTEM_PROXY
 
 path = IMAGE_PATH + 'tkf-bullet/'
 
@@ -80,32 +81,37 @@ caliber_mapping = {
     # 添加更多弹药类型的处理方式...
 }
 
+# 通过任务编号查询任务名
+def query_task_name(taskId):
+    query_task = '{task(id:"'+taskId+'",lang:zh){name}}'
+    headers = {"Content-Type": "application/json"}
+    response = requests.post('https://api.tarkov.dev/graphql', json={'query': query_task}, headers=headers, timeout=30, proxies=SYSTEM_PROXY)
+    if response.status_code == 200:
+        result = response.json()
+    else:
+        print(f"请求失败,错误代码{response.status_code}")
+        return -1
+    print(result)
+    return result["data"]["task"]["name"]
 
-def updateAmmoData() -> int:
+def clean_caliber(caliber_str: str) -> str:
+    """清理和格式化弹药的口径字符串."""
+    return caliber_str.replace("“", "").replace("”", "").replace("毫米", "mm")
+
+def clean_name(name_str: str) -> str:
+    """清理和格式化名称字符串."""
+    return name_str.replace("独头弹", "").replace("M62曳光弹", "M62")
+
+def process_ammo_data(db, ammo_data) -> int:
+    """处理弹药数据并更新数据库."""
     try:
-        db = DatabaseDao()
-
-        # 浏览器头
-        headers = {"Content-Type": "application/json"}
-
-        # 获取中文数据
-        response = requests.post('https://api.tarkov.dev/graphql',
-                                 json={'query': query_cn}, headers=headers, timeout=30)
-        
-        # 判断是否成功
-        if response.status_code == 200:
-            cnData = response.json()
-        else:
-            raise Exception("查询无法运行，返回的代码为 {}. {}".format(
-                response.status_code, query_cn))
-
-
-        for i in cnData['data']['ammo']:
+        for i in ammo_data['data']['ammo']:
             calibers = i["item"]["name"].split(" ")
             calibers[0] = clean_caliber(calibers[0])
 
             if calibers[0] in caliber_mapping:
                 caliber, name = caliber_mapping[calibers[0]]
+            # 添加其他不同口径的条件...
             elif calibers[0] == ".357":
                 caliber = calibers[0] + " " + calibers[1]
                 name = " ".join([clean_name(calibers[j]) for j in range(2, len(calibers))])
@@ -113,11 +119,10 @@ def updateAmmoData() -> int:
                 caliber = "26x75"
                 name = calibers[0].replace("26x75燃烧", "").replace("26x75毫米", "").replace("（", "(").replace("）", ")")
             else:
-                # 默认情况，去除毫米并保留原名
+                # 默认情况，移除 "毫米" 并保留原名
                 caliber = calibers[0]
                 name = " ".join([clean_name(calibers[j]) for j in range(1, len(calibers))])
 
-            # 创建子弹信息对象
             new_ammo = Ammo(
                 id = None,
                 name=name,
@@ -143,27 +148,49 @@ def updateAmmoData() -> int:
                 staminaBurnPerDamage= round(i["staminaBurnPerDamage"],3)
             )
 
-            # 判断子弹是否存在
-            ammoId = db.selectAmmo(new_ammo)
-            if ammoId > 0:
-                db.updateAmmo(ammoId, new_ammo)
+            ammo_id = db.selectAmmo(new_ammo)
+            if ammo_id > 0:
+                db.updateAmmo(ammo_id, new_ammo)
                 # 删除旧图片
-                os.remove(path + "bullet/" + caliber.replace("毫米", "mm").replace("/", "_").replace('"', "") + " " + name.rstrip().replace('"', "") + ".png")
+                image_path = os.path.join(path, "bullet", caliber.replace("毫米", "mm").replace("/", "_").replace('"', "") + " " + name.rstrip().replace('"', "") + ".png")
+                # os.remove(image_path)
                 # 下载新图片
-                office.image.down4img(
-                    url=i["item"]["iconLink"],
-                    output_name=caliber.replace("毫米", "mm").replace("/", "_").replace('"', "") + " " + name.rstrip().replace('"', ""),
-                    output_path=path + "bullet/",
-                    type='png')
-
+                result = requests.get(i["item"]["iconLink"], timeout=30, proxies=SYSTEM_PROXY)
+                if result.status_code == 200:
+                    img_path = caliber.replace("毫米", "mm").replace("/", "_").replace('"', "") + " " + name.rstrip().replace('"', "")
+                    with open(path + f"bullet/{img_path}.png", 'wb') as f:
+                        f.write(result.content)
+                else:
+                    print(f"请求失败,错误代码{result.status_code}")
+                    return -1
             else:
                 db.insertAmmo(new_ammo)
-                office.image.down4img(
-                    url=i["item"]["iconLink"],
-                    output_name=caliber.replace("毫米", "mm").replace("/", "_").replace('"', "") + " " + name.rstrip().replace('"', ""),
-                    output_path=path + "bullet/",
-                    type='png')
+                # 下载新图片
+                result = requests.get(i["item"]["iconLink"], timeout=30, proxies=SYSTEM_PROXY)
+                if result.status_code == 200:
+                    img_path = caliber.replace("毫米", "mm").replace("/", "_").replace('"', "") + " " + name.rstrip().replace('"', "")
+                    with open(path + f"bullet/{img_path}.png", 'wb') as f:
+                        f.write(result.content)
+                else:
+                    print(f"请求失败,错误代码{result.status_code}")
+                    return -1
+        
         return 1
+    except Exception as e:
+        print(e)
+        return -1
+
+def updateAmmoData() -> int:
+    try:
+        db = DatabaseDao()
+        headers = {"Content-Type": "application/json"}
+        response = requests.post('https://api.tarkov.dev/graphql', json={'query': query_cn}, headers=headers, timeout=30)
+        if response.status_code == 200:
+            cnData = response.json()
+        else:
+            print("查询无法运行，返回的代码为 {}. {}".format(response.status_code, query_cn))
+
+        return process_ammo_data(db, cnData)
     except Exception as e:
         print(e)
         return -1

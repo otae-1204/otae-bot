@@ -161,21 +161,21 @@ async def WebImageBuilders(fillName: str,webUrl: str):
         await browser.close()
 
 
-async def WebImageBuilders(fillName: str,webUrl: str) :
-    """
-    说明：
-        截图指定网页并保存
-    参数：
-        :param fillName: 保存到本地所使用的图片名
-        :param webUrl: 要截图的网页链接
-    """
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True,timeout = 0)
-        page = await browser.new_page()
-        await page.goto(webUrl)
-            # await page.wait_for_selector()
-        await page.screenshot(path=f'{IMAGE_PATH}{fillName}.png',full_page=True)
-        await browser.close()
+# async def WebImageBuilders(fillName: str,webUrl: str) :
+#     """
+#     说明：
+#         截图指定网页并保存
+#     参数：
+#         :param fillName: 保存到本地所使用的图片名
+#         :param webUrl: 要截图的网页链接
+#     """
+#     async with async_playwright() as p:
+#         browser = await p.chromium.launch(headless=True,timeout = 0)
+#         page = await browser.new_page()
+#         await page.goto(webUrl)
+#             # await page.wait_for_selector()
+#         await page.screenshot(path=f'{IMAGE_PATH}{fillName}.png',full_page=True)
+#         await browser.close()
 
 
 
