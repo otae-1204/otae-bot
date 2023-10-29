@@ -448,7 +448,7 @@ def build_ammo_info(ammoInfo, ammoMoreInfo: AmmoMoreInfo, qqId) -> int:
                     bg.paste(craftsForRequirementsCount, (posX, posY+320),alpha=True)
 
                 # 绘制所需时间
-                h = ammoMoreInfo.craftsFor[i].duration / 36000
+                h = ammoMoreInfo.craftsFor[i].duration / 3600
                 m = 60 * (h - int(h))
                 craftsForTime = BuildImage(w=0, h=0, font="default.ttf", font_size=140, plain_text=f"{int(h)}时{int(m)}分",is_alpha=True, font_color=(55, 55, 55))
                 posX = 480 + int((640 - craftsForTime.w) / 2)
