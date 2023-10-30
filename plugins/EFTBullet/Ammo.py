@@ -85,12 +85,14 @@ class CraftsFor:
 class AmmoMoreInfo:
     basePrice: int  # 基础价格
     avg24hPrice: int  # 24小时平均价格
+    fleaMarketPrice: int # 跳蚤市场最近价格
     buyFor: list[BuyFor]  # 购买来源
     craftsFor: list[CraftsFor]  # 合成来源
 
     # 构造函数
-    def __init__(self, basePrice, avg24hPrice, buyFor, craftsFor):
+    def __init__(self, basePrice, avg24hPrice, buyFor, craftsFor, fleaMarketPrice):
         self.basePrice = basePrice
         self.avg24hPrice = avg24hPrice
         self.buyFor = buyFor
         self.craftsFor = craftsFor
+        self.fleaMarketPrice = fleaMarketPrice

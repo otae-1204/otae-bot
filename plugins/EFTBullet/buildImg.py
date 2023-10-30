@@ -393,7 +393,8 @@ def build_ammo_info(ammoInfo, ammoMoreInfo: AmmoMoreInfo, qqId) -> int:
                 bg.paste(buyForRequirements, (1250, 4270 + i * 820),alpha=True)
 
                 # 绘制价格
-                buyForPrice = BuildImage(w=0, h=0, font="default.ttf", font_size=140, plain_text=f"价格 {ammoMoreInfo.buyFor[i].price} ({ammoMoreInfo.buyFor[i].currency})",is_alpha=True, font_color=(55, 55, 55))
+                buyForPriceText = ammoMoreInfo.buyFor[i].price if ammoMoreInfo.buyFor[i].source != "fleaMarket" else ammoMoreInfo.fleaMarketPrice
+                buyForPrice = BuildImage(w=0, h=0, font="default.ttf", font_size=140, plain_text=f"价格 {buyForPriceText} ({ammoMoreInfo.buyFor[i].currency})",is_alpha=True, font_color=(55, 55, 55))
                 bg.paste(buyForPrice, (1250, 4490 + i * 820),alpha=True)
 
                 # 绘制分割
