@@ -163,7 +163,6 @@ def clean_name(name_str: str) -> str:
     # print(ammo_Name)
     return ammo_Name
 
-
 def process_ammo_data(db, ammo_data) -> int:
     """
     说明:       
@@ -245,7 +244,6 @@ def process_ammo_data(db, ammo_data) -> int:
     except Exception as e:
         print(e)
         return -1
-
 
 def updateAmmoData() -> int:
     try:

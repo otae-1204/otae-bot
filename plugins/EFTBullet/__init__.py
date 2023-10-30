@@ -58,6 +58,9 @@ async def hand(event: Event):
     name \
     basePrice \
     avg24hPrice \
+    historicalPrices{ \
+      price \
+    } \
     buyFor { \
         price \
         currency \
@@ -104,7 +107,7 @@ async def hand(event: Event):
                 # 更新缓存文件
                 with open(f"{JSON_PATH}/EFTBulletTemp/BulletPriceTemp.json", "a+") as f:
                     tempData = dict(f.read())
-                    tempData[f"{resultData['name']}"] = [resultData["basePrice"], resultData["avg24hPrice"]]
+                    tempData[f"{resultData['name']}"] = [resultData["basePrice"], resultData["avg24hPrice"], resultData["historicalPrices"][len(resultData["historicalPrices"]-1)]["price"]]
                     f.write(str(tempData))
 
                 # 获取购买来源
@@ -145,6 +148,11 @@ async def hand(event: Event):
                     tempData = dict(f.read())
                     tempData[f"{resultData['name']}"] = craftsFor
                     f.write(str(tempData))
+            
+                # 获取跳蚤市场最近价格
+                fleaMarketPrice = resultData["historicalPrices"][len(resultData["historicalPrices"])-1]["price"]
+
+
             # 不成功则使用缓存数据
             else:
                 isTempData = True
@@ -177,9 +185,11 @@ async def hand(event: Event):
                 if data[0].name in tempData.keys():
                     basePrice = tempData[data[0].name][0]
                     avg24hPrice = tempData[data[0].name][1]
+                    fleaMarketPrice = tempData[data[0].name][2]
                 else:
                     basePrice = -1
                     avg24hPrice = -1
+                    fleaMarketPrice = -1
 
         if buyFor == -1 or craftsFor == -1:
             # 若没有缓存数据则绘制粗略图
@@ -190,7 +200,8 @@ async def hand(event: Event):
             resultData["basePrice"] if basePrice != -1 else basePrice,
             resultData["avg24hPrice"] if avg24hPrice != -1 else avg24hPrice, 
             buyFor, 
-            craftsFor
+            craftsFor,
+            fleaMarketPrice
         )
         
         # 绘制图片
