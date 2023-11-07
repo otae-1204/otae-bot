@@ -1,6 +1,7 @@
 import asyncio
 from playwright.async_api import async_playwright
 from configs.path_config import IMAGE_PATH, FONT_PATH, EXECUTABLE_PATH
+from configs.config import SYSTEM_PROXY
 from PIL import Image, ImageFile, ImageDraw, ImageFont, ImageFilter
 from imagehash import ImageHash
 from io import BytesIO

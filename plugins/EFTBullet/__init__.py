@@ -1,5 +1,6 @@
-import re
+import re,time
 from nonebot import on_regex, on_command
+from nonebot.adapters.onebot.v11 import Message
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 from nonebot.adapters import Event
 from nonebot.permission import SUPERUSER
@@ -27,6 +28,12 @@ caliberEpithet = {
 
 @selectBullet.handle()
 async def hand(event: Event):
+    # 获取起始时间
+    startTime = time.time()
+
+    # 获取信息ID
+    msgid = event.get_event_description().split(" ")[1]
+
     # 获取输入内容
     count = str(event.message).split(" ")[1:]
 
@@ -211,11 +218,11 @@ async def hand(event: Event):
 
     # 判断绘制结果 1:成功 0:无数据 -1:失败
     if imgResult == 1:
-        await selectBullet.send(at(qqid) + image(f"{IMAGE_PATH}/tkf-bullet/img/{qqid}.png"))
+        await selectBullet.send(Message(f"[CQ:reply,id={msgid}]") + image(f"{IMAGE_PATH}/tkf-bullet/img/{qqid}.png") + f"本次生成用时{round(time.time()-startTime, 2)}秒")
         os.remove(f"{IMAGE_PATH}/tkf-bullet/img/{qqid}.png")
         return
     elif imgResult == 0:
-        await selectBullet.finish(at(qqid) + image(f"{IMAGE_PATH}/tkf-bullet/img/无数据.png"))
+        await selectBullet.send(Message(f"[CQ:reply,id={msgid}]") + image(f"{IMAGE_PATH}/tkf-bullet/img/无数据.png"))
     else:
         await selectBullet.finish("查询出现问题,请联系开发者修复")
 
