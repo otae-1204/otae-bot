@@ -5,7 +5,7 @@ nonebot-adapter-onebot==2.3.1
 nonebot_plugin_apscheduler==0.3.0
 nonebot2[FastAPI]
 nonebot2==2.1.1
-playwright==1.30.0
+playwright
 PyMySQL==1.1.0
 requests==2.31.0
 ruamel.yaml==0.17.32

@@ -16,7 +16,7 @@ wiki = on_regex(pattern=r"^/查{0,1}wiki(.+?)$",flags=I)
 
 @wiki.handle()
 async def h_r(event: Event):
-    msgid = event.get_event_description().split(" ")[1];
+    msgid = event.get_event_description().split(" ")[1]
     # print("="*50)
     # print(msgid)
     # print("="*50)
@@ -33,6 +33,7 @@ async def h_r(event: Event):
             await wiki.send(Message(f"[CQ:reply,id={msgid}]图片生成中,请稍后"))
             # await wiki.send(Message(f"[CQ:reply,id={msgid}] 111")) 
             web_url = "https://wiki.biligame.com" + src[0]
+            print(web_url)
             await WebImageBuilders(fillName="wiki", webUrl=web_url)
             img = BuildImage(h=0, w=0, background=IMAGE_PATH+"/wiki.png")
             while(img.h > 20000):
