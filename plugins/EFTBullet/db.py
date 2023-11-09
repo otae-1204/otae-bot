@@ -1,7 +1,7 @@
 import requests
 from configs.path_config import IMAGE_PATH
 import pymysql
-from plugins.EFTBullet.Ammo import Ammo
+from plugins.EFTBullet.object import Ammo
 import os
 from utils.user_agent import get_user_agent
 from configs.config import SYSTEM_PROXY

@@ -3,7 +3,7 @@ from configs.path_config import IMAGE_PATH
 from configs.config import SYSTEM_PROXY
 from utils.user_agent import get_user_agent
 from plugins.EFTBullet.db import query_task_name
-from plugins.EFTBullet.Ammo import AmmoMoreInfo
+from plugins.EFTBullet.object import AmmoMoreInfo
 import os, requests
 
 
