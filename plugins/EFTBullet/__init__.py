@@ -10,7 +10,7 @@ from utils.message_builder import at, image
 from configs.path_config import IMAGE_PATH, JSON_PATH
 from configs.config import SYSTEM_PROXY
 import requests, os
-from plugins.EFTBullet.Ammo import AmmoMoreInfo, CraftsFor, BuyFor
+from plugins.EFTBullet.object import AmmoMoreInfo, Craft, ItemPrice
 
 ALL_PERMISSION = GROUP_ADMIN | GROUP_OWNER | SUPERUSER
 
@@ -121,7 +121,7 @@ async def hand(event: Event):
                 buyFor = []
                 for buy in resultData["buyFor"]:
                     buyFor.append(
-                        BuyFor(
+                        ItemPrice(
                             buy["price"],
                             buy["currency"], 
                             buy["priceRUB"], 
@@ -142,7 +142,7 @@ async def hand(event: Event):
                                 "count":item["count"]
                             }
                             )
-                    craftsFor.append(CraftsFor(craft["station"]["name"], craft["level"], craft["duration"], requiredItems))
+                    craftsFor.append(Craft(craft["station"]["name"], craft["level"], craft["duration"], requiredItems))
 
                 # 更新BuyFor缓存文件
                 with open(f"{JSON_PATH}/EFTBulletTemp/BulletBuyForTemp.json", "a+") as f:

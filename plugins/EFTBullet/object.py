@@ -52,7 +52,7 @@ class Ammo:
 
 
 # 购买来源
-class BuyFor:
+class ItemPrice:
     price: int  # 价格
     currency: str  # 货币
     priceRUB: int  # 价格（卢布）
@@ -68,7 +68,7 @@ class BuyFor:
         self.requirements = requirements
 
 # 合成来源
-class CraftsFor:
+class Craft:
     name : str # 名称
     level : int # 等级
     duration : int # 时间
@@ -86,8 +86,8 @@ class AmmoMoreInfo:
     basePrice: int  # 基础价格
     avg24hPrice: int  # 24小时平均价格
     fleaMarketPrice: int # 跳蚤市场最近价格
-    buyFor: list[BuyFor]  # 购买来源
-    craftsFor: list[CraftsFor]  # 合成来源
+    buyFor: list[ItemPrice]  # 购买来源
+    craftsFor: list[Craft]  # 合成来源
 
     # 构造函数
     def __init__(self, basePrice, avg24hPrice, buyFor, craftsFor, fleaMarketPrice):
