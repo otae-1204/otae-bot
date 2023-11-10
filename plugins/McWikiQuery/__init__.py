@@ -24,7 +24,7 @@ async def h_r(event: Event):
     content = "".join(str(event.message).split(" ")[1:])
     try:
         url = requests.get(
-            f"https://wiki.biligame.com/mc/index.php?title=特殊:搜索&profile=all&search={content}&fulltext=1")
+            f"https://zh.minecraft.wiki/?search=&title=Special%3A%E6%90%9C%E7%B4%A2&go={content}")
         src = etree.HTML(url.text).xpath('//a[@data-serp-pos="0"]/@href')
         # print(src)
         if len(src) == 0:
@@ -32,9 +32,10 @@ async def h_r(event: Event):
         else:
             await wiki.send(Message(f"[CQ:reply,id={msgid}]图片生成中,请稍后"))
             # await wiki.send(Message(f"[CQ:reply,id={msgid}] 111")) 
-            web_url = "https://wiki.biligame.com" + src[0]
-            print(web_url)
-            await WebImageBuilders(fillName="wiki", webUrl=web_url)
+            web_url = "https://zh.minecraft.wiki" + src[0]
+            # print(web_url)
+            if await WebImageBuilders(fillName="wiki", webUrl=web_url) == -1:
+                await wiki.finish("插件出现问题，可尝试联系开发者解决")
             img = BuildImage(h=0, w=0, background=IMAGE_PATH+"/wiki.png")
             while(img.h > 20000):
                 img.resize(0.9)
