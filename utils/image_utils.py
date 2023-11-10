@@ -150,16 +150,18 @@ async def WebImageBuilders(fillName: str,webUrl: str):
         :param fillName: 保存到本地所使用的图片名
         :param webUrl: 要截图的网页链接
     """
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True,timeout=30)
     try:
-        page = await browser.new_page()
-        await page.goto(webUrl)
-        image_bytes = await page.screenshot(full_page=True)
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True,timeout=0)
+            # context = await browser.new_context()
+            page = await browser.new_page()
+            await page.goto(webUrl)
+            image_bytes = await page.screenshot(full_page=True)
         with open(f'{IMAGE_PATH}{fillName}.png', 'wb') as f:
             f.write(image_bytes)
-    finally:
-        await browser.close()
+    except Exception as e:
+        print(e)
+        return -1
 
 
 # async def WebImageBuilders(fillName: str,webUrl: str) :
