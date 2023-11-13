@@ -18,15 +18,16 @@ class Ammo:
     heavyBleedModifier: float  # 大出血修正
     img: str  # 图片名
     marketSale: int  # 是否禁售
-    apiID : str # API ID
-    projectileCount : int # 弹丸数量
-    initialSpeed : float # 初速
-    staminaBurnPerDamage : float # 消耗体力
+    apiID: str  # API ID
+    projectileCount: int  # 弹丸数量
+    initialSpeed: float  # 初速
+    staminaBurnPerDamage: float  # 消耗体力
 
     # 构造函数
     def __init__(self, id, name, caliber, weight, stackMaxSize, tracer, tracerColor, damage, armorDamage,
                  fragmentationChance, ricochetChance, penetrationPower, accuracyModifier, recoilModifier,
-                 lightBleedModifier, heavyBleedModifier, img, marketSale,apiID,projectileCount,initialSpeed,staminaBurnPerDamage):
+                 lightBleedModifier, heavyBleedModifier, img, marketSale, apiID, projectileCount, initialSpeed,
+                 staminaBurnPerDamage):
         self.id = id
         self.name = name
         self.caliber = caliber
@@ -67,12 +68,13 @@ class ItemPrice:
         self.source = source
         self.requirements = requirements
 
+
 # 合成来源
 class Craft:
-    name : str # 名称
-    level : int # 等级
-    duration : int # 时间
-    requirements : list[dict] # 材料 dict(name, count)
+    name: str  # 名称
+    level: int  # 等级
+    duration: int  # 时间
+    requirements: list[dict]  # 材料 dict(name, count)
 
     # 构造函数
     def __init__(self, name, level, duration, requirements):
@@ -81,11 +83,12 @@ class Craft:
         self.duration = duration
         self.requirements = requirements
 
+
 # 子弹详细信息类
 class AmmoMoreInfo:
     basePrice: int  # 基础价格
     avg24hPrice: int  # 24小时平均价格
-    fleaMarketPrice: int # 跳蚤市场最近价格
+    fleaMarketPrice: int  # 跳蚤市场最近价格
     buyFor: list[ItemPrice]  # 购买来源
     craftsFor: list[Craft]  # 合成来源
 

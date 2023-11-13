@@ -8,6 +8,7 @@ from nonebot.exception import ActionFailed
 from utils.message_builder import image, at
 from utils.image_utils import WebImageBuilders
 from utils.utils import get_msg_content
+from configs.config import SYSTEM_PROXY
 from utils.image_utils import BuildImage
 from configs.path_config import IMAGE_PATH
 import requests
@@ -24,7 +25,7 @@ async def h_r(event: Event):
     content = "".join(str(event.message).split(" ")[1:])
     try:
         url = requests.get(
-            f"https://zh.minecraft.wiki/?search=&title=Special%3A%E6%90%9C%E7%B4%A2&go={content}")
+            f"https://zh.minecraft.wiki/?search={content}&title=Special%3A%E6%90%9C%E7%B4%A2&profile=default&fulltext=1",proxies=SYSTEM_PROXY)
         src = etree.HTML(url.text).xpath('//a[@data-serp-pos="0"]/@href')
         # print(src)
         if len(src) == 0:
@@ -34,8 +35,7 @@ async def h_r(event: Event):
             # await wiki.send(Message(f"[CQ:reply,id={msgid}] 111")) 
             web_url = "https://zh.minecraft.wiki" + src[0]
             # print(web_url)
-            if await WebImageBuilders(fillName="wiki", webUrl=web_url) == -1:
-                await wiki.finish("插件出现问题，可尝试联系开发者解决")
+            await WebImageBuilders(fillName="wiki", webUrl=web_url)
             img = BuildImage(h=0, w=0, background=IMAGE_PATH+"/wiki.png")
             while(img.h > 20000):
                 img.resize(0.9)

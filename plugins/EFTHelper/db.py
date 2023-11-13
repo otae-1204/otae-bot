@@ -1,12 +1,12 @@
 import requests
 from configs.path_config import IMAGE_PATH
 import pymysql
-from plugins.EFTBullet.object import Ammo
+from plugins.EFTHelper.object import Ammo
 import os
 from utils.user_agent import get_user_agent
 from configs.config import SYSTEM_PROXY
 
-path = IMAGE_PATH + 'tkf-bullet/'
+path = IMAGE_PATH + 'EFTHelper/'
 
 query_cn = """
 {
@@ -98,10 +98,10 @@ def query_task_name(taskId):
     返回:
         str
     """
-    query_task = '{task(id:"'+taskId+'",lang:zh){name}}'
+    query_task = '{task(id:"' + taskId + '",lang:zh){name}}'
     headers = {"Content-Type": "application/json"}
     response = requests.post('https://api.tarkov.dev/graphql', json={
-                             'query': query_task}, headers=headers, timeout=30, proxies=SYSTEM_PROXY)
+        'query': query_task}, headers=headers, timeout=30, proxies=SYSTEM_PROXY)
     if response.status_code == 200:
         result = response.json()
     else:
@@ -109,6 +109,7 @@ def query_task_name(taskId):
         return -1
     print(result)
     return result["data"]["task"]["name"]
+
 
 def clean_name(name_str: str) -> str:
     """
@@ -126,16 +127,16 @@ def clean_name(name_str: str) -> str:
         "40毫米VOG-25榴弹": "VOG-25榴弹",
         "“Express”": "6.5毫米鹿弹",
         "“Magnum”": "8.5毫米鹿弹",
-        "“Poleva-3”" : "Poleva-3",
-        "“Poleva-6u”" : "Poleva-6u",
-        "Copper" : "Copper Sabot Premier",
-        ".50" : ".50 BMG",
-        "“SuperFormance”" : "SuperFormance",
-        "Dual" : "Dual Sabot",
-        "Poleva-6u" : "Poleva-6u",
-        "Poleva-3u" : "Poleva-3u",
+        "“Poleva-3”": "Poleva-3",
+        "“Poleva-6u”": "Poleva-6u",
+        "Copper": "Copper Sabot Premier",
+        ".50": ".50 BMG",
+        "“SuperFormance”": "SuperFormance",
+        "Dual": "Dual Sabot",
+        "Poleva-6u": "Poleva-6u",
+        "Poleva-3u": "Poleva-3u",
     }
-    name_list = name_str.replace("独头弹","").split(" ")
+    name_list = name_str.replace("独头弹", "").split(" ")
     ammo_Name = ""
     if name_list[0] in name_mapping:
         ammo_Name = name_mapping[name_list[0]]
@@ -162,6 +163,7 @@ def clean_name(name_str: str) -> str:
     # print("=-=-="*20)
     # print(ammo_Name)
     return ammo_Name
+
 
 def process_ammo_data(db, ammo_data) -> int:
     """
@@ -245,12 +247,13 @@ def process_ammo_data(db, ammo_data) -> int:
         print(e)
         return -1
 
+
 def updateAmmoData() -> int:
     try:
         db = DatabaseDao()
         headers = {"Content-Type": "application/json"}
         response = requests.post('https://api.tarkov.dev/graphql', json={
-                                 'query': query_cn}, headers=headers, timeout=30, proxies=SYSTEM_PROXY)
+            'query': query_cn}, headers=headers, timeout=30, proxies=SYSTEM_PROXY)
         if response.status_code == 200:
             cnData = response.json()
         else:
@@ -261,6 +264,7 @@ def updateAmmoData() -> int:
     except Exception as e:
         print(e)
         return -1
+
 
 # 数据库操作类
 
@@ -398,7 +402,8 @@ class DatabaseDao:
             ammoList = []
             print(result)
             for j in result:
-                ammo = Ammo(j[0], j[1], j[2], j[3], j[4], j[5], j[6], j[7], j[8], j[9], j[10], j[11], j[12], j[13], j[14],
+                ammo = Ammo(j[0], j[1], j[2], j[3], j[4], j[5], j[6], j[7], j[8], j[9], j[10], j[11], j[12], j[13],
+                            j[14],
                             j[15], j[16], j[17])
                 ammoList.append(ammo)
             print(ammoList)
@@ -428,7 +433,8 @@ class DatabaseDao:
             result = self.cursor.fetchall()
             ammoList = []
             for j in result:
-                ammo = Ammo(j[0], j[1], j[2], j[3], j[4], j[5], j[6], j[7], j[8], j[9], j[10], j[11], j[12], j[13], j[14],
+                ammo = Ammo(j[0], j[1], j[2], j[3], j[4], j[5], j[6], j[7], j[8], j[9], j[10], j[11], j[12], j[13],
+                            j[14],
                             j[15], j[16], j[17])
                 ammoList.append(ammo)
             return ammoList
@@ -458,7 +464,8 @@ class DatabaseDao:
             result = self.cursor.fetchall()
             ammoList = []
             for j in result:
-                ammo = Ammo(j[0], j[1], j[2], j[3], j[4], j[5], j[6], j[7], j[8], j[9], j[10], j[11], j[12], j[13], j[14],
+                ammo = Ammo(j[0], j[1], j[2], j[3], j[4], j[5], j[6], j[7], j[8], j[9], j[10], j[11], j[12], j[13],
+                            j[14],
                             j[15], j[16], j[17])
                 ammoList.append(ammo)
             return ammoList
@@ -485,13 +492,13 @@ class DatabaseDao:
             sql = "select * from bulletdata"
             ammoList = []
             for i in range(0, len(conditions)):
-                print("*"*50)
+                print("*" * 50)
                 print(conditions[i])
                 conditions[i] = conditions[i].replace("amp;", "")
                 if conditions[i][:1] in caliberStart:
                     sqlEx = "%" + \
-                        conditions[i][1:].replace(
-                            "*", "x").replace("×", "x").replace("＊", "x") + "%"
+                            conditions[i][1:].replace(
+                                "*", "x").replace("×", "x").replace("＊", "x") + "%"
                     print(sqlEx)
                     sql += f' where caliber like "{sqlEx}"' if i == 0 \
                         else f' and caliber like "{sqlEx}" '
@@ -555,7 +562,8 @@ class DatabaseDao:
             result = self.cursor.fetchall()
             # print(result)
             for k in result:
-                ammo = Ammo(k[0], k[1], k[2], k[3], k[4], k[5], k[6], k[7], k[8], k[9], k[10], k[11], k[12], k[13], k[14],
+                ammo = Ammo(k[0], k[1], k[2], k[3], k[4], k[5], k[6], k[7], k[8], k[9], k[10], k[11], k[12], k[13],
+                            k[14],
                             k[15], k[16], k[17], k[18], k[19], k[20], k[21])
                 ammoList.append(ammo)
                 # print(ammoList)
@@ -585,8 +593,8 @@ class DatabaseDao:
             condition = condition.replace("amp;", "")
             if condition[:1] in caliberStart:
                 sqlEx = "%" + \
-                    condition[1:].replace(
-                        "*", "x").replace("×", "x").replace("＊", "x") + "%"
+                        condition[1:].replace(
+                            "*", "x").replace("×", "x").replace("＊", "x") + "%"
                 sql += f' where caliber like "{sqlEx}"'
             elif condition[:1] in idStart:
                 sqlEx = condition[1:]
@@ -636,7 +644,8 @@ class DatabaseDao:
             result = self.cursor.fetchall()
             ammoList = []
             for i in result:
-                ammo = Ammo(i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8], i[9], i[10], i[11], i[12], i[13], i[14],
+                ammo = Ammo(i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8], i[9], i[10], i[11], i[12], i[13],
+                            i[14],
                             i[15], i[16], i[17], i[18], i[19], i[20], i[21])
                 ammoList.append(ammo)
             return ammoList
@@ -645,6 +654,5 @@ class DatabaseDao:
             return []
         finally:
             self.closeAll()
-
 
 # updateAmmoData()
