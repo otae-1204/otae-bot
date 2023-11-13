@@ -1,22 +1,26 @@
-import re,time
+import re
+import time
+
+import os
+import requests
 from nonebot import on_regex, on_command
+from nonebot.adapters import Event
 from nonebot.adapters.onebot.v11 import Message
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
-from nonebot.adapters import Event
 from nonebot.permission import SUPERUSER
-from plugins.EFTBullet.db import DatabaseDao, updateAmmoData
-from plugins.EFTBullet.buildImg import build_ammo_image, build_ammo_info
-from utils.message_builder import at, image
-from configs.path_config import IMAGE_PATH, JSON_PATH
+
 from configs.config import SYSTEM_PROXY
-import requests, os
-from plugins.EFTBullet.object import AmmoMoreInfo, Craft, ItemPrice
+from configs.path_config import IMAGE_PATH, JSON_PATH
+from plugins.EFTHelper.buildImg import build_ammo_image, build_ammo_info
+from plugins.EFTHelper.db import DatabaseDao, updateAmmoData
+from plugins.EFTHelper.object import AmmoMoreInfo, Craft, ItemPrice
+from utils.message_builder import image
 
 ALL_PERMISSION = GROUP_ADMIN | GROUP_OWNER | SUPERUSER
 
 selectBullet = on_regex(r"^/查子弹(.+?)$|^/eftb(.+?)$", flags=re.I)
 updateBullet = on_command("更新子弹", permission=ALL_PERMISSION)
-selectBulletArmorDamage = on_regex(r"^/查损甲(.+?)$|^/eftbad(.+?)$",flags=re.I)
+selectBulletArmorDamage = on_regex(r"^/查损甲(.+?)$|^/eftbad(.+?)$", flags=re.I)
 
 caliberEpithet = {
     "7.62": ["762"],
@@ -26,6 +30,8 @@ caliberEpithet = {
     "7.62x51": ["762x51", ".308", "NATO"]
 }
 
+
+# 查询子弹数据
 @selectBullet.handle()
 async def hand(event: Event):
     # 获取起始时间
@@ -103,9 +109,10 @@ async def hand(event: Event):
         basePrice = 0
         avg24hPrice = 0
         try:
-        # 获取中文数据
-            response = requests.post('https://api.tarkov.dev/graphql',json={'query': query_cn}, headers=headers, timeout=15, proxies=SYSTEM_PROXY)
-            
+            # 获取中文数据
+            response = requests.post('https://api.tarkov.dev/graphql', json={'query': query_cn}, headers=headers,
+                                     timeout=15, proxies=SYSTEM_PROXY)
+
             # 判断是否成功
             if response.status_code == 200:
                 # 获取数据
@@ -114,7 +121,9 @@ async def hand(event: Event):
                 # 更新缓存文件
                 with open(f"{JSON_PATH}/EFTBulletTemp/BulletPriceTemp.json", "a+") as f:
                     tempData = dict(f.read())
-                    tempData[f"{resultData['name']}"] = [resultData["basePrice"], resultData["avg24hPrice"], resultData["historicalPrices"][len(resultData["historicalPrices"]-1)]["price"]]
+                    tempData[f"{resultData['name']}"] = [resultData["basePrice"], resultData["avg24hPrice"],
+                                                         resultData["historicalPrices"][
+                                                             len(resultData["historicalPrices"] - 1)]["price"]]
                     f.write(str(tempData))
 
                 # 获取购买来源
@@ -123,12 +132,12 @@ async def hand(event: Event):
                     buyFor.append(
                         ItemPrice(
                             buy["price"],
-                            buy["currency"], 
-                            buy["priceRUB"], 
+                            buy["currency"],
+                            buy["priceRUB"],
                             buy["source"],
                             buy["requirements"]
-                            )
                         )
+                    )
 
                 # 获取合成来源
                 craftsFor = []
@@ -137,11 +146,11 @@ async def hand(event: Event):
                     for item in craft["requiredItems"]:
                         requiredItems.append(
                             {
-                                "name":item["item"]["name"],
-                                "iconLink":item["item"]["iconLink"],
-                                "count":item["count"]
+                                "name": item["item"]["name"],
+                                "iconLink": item["item"]["iconLink"],
+                                "count": item["count"]
                             }
-                            )
+                        )
                     craftsFor.append(Craft(craft["station"]["name"], craft["level"], craft["duration"], requiredItems))
 
                 # 更新BuyFor缓存文件
@@ -149,16 +158,15 @@ async def hand(event: Event):
                     tempData = dict(f.read())
                     tempData[f"{resultData['name']}"] = buyFor
                     f.write(str(tempData))
-                
+
                 # 更新CraftsFor缓存文件
                 with open(f"{JSON_PATH}/EFTBulletTemp/BulletCraftsForTemp.json", "a+") as f:
                     tempData = dict(f.read())
                     tempData[f"{resultData['name']}"] = craftsFor
                     f.write(str(tempData))
-            
-                # 获取跳蚤市场最近价格
-                fleaMarketPrice = resultData["historicalPrices"][len(resultData["historicalPrices"])-1]["price"]
 
+                # 获取跳蚤市场最近价格
+                fleaMarketPrice = resultData["historicalPrices"][len(resultData["historicalPrices"]) - 1]["price"]
 
             # 不成功则使用缓存数据
             else:
@@ -166,27 +174,30 @@ async def hand(event: Event):
         # request异常则使用缓存数据
         except Exception as e:
             isTempData = True
-            print("=-="*20)
-            print("Request异常,使用缓存数据:\n",e)
-            print("=-="*20)
+            print("=-=" * 20)
+            print("Request异常,使用缓存数据:\n", e)
+            print("=-=" * 20)
 
         # 判断是否使用缓存数据      
         if isTempData:
-            selectBullet.finish("内部错误") if not os.path.exists(f"{JSON_PATH}/EFTBulletTemp/BulletBuyForTemp.json") else ...
+            selectBullet.finish("内部错误") if not os.path.exists(
+                f"{JSON_PATH}/EFTBulletTemp/BulletBuyForTemp.json") else ...
             with open(f"{JSON_PATH}/EFTBulletTemp/BulletBuyForTemp.json", "r") as f:
                 tempData = dict(f.read())
                 if data[0].name in tempData.keys():
                     buyFor = tempData[data[0].name]
                 else:
                     buyFor = -1
-            selectBullet.finish("内部错误") if not os.path.exists(f"{JSON_PATH}/EFTBulletTemp/BulletCraftsForTemp.json") else ...
+            selectBullet.finish("内部错误") if not os.path.exists(
+                f"{JSON_PATH}/EFTBulletTemp/BulletCraftsForTemp.json") else ...
             with open(f"{JSON_PATH}/EFTBulletTemp/BulletCraftsForTemp.json", "r") as f:
                 tempData = dict(f.read())
                 if data[0].name in tempData.keys():
                     craftsFor = tempData[data[0].name]
                 else:
                     craftsFor = -1
-            selectBullet.finish("内部错误") if not os.path.exists(f"{JSON_PATH}/EFTBulletTemp/BulletPriceTemp.json") else ...
+            selectBullet.finish("内部错误") if not os.path.exists(
+                f"{JSON_PATH}/EFTBulletTemp/BulletPriceTemp.json") else ...
             with open(f"{JSON_PATH}/EFTBulletTemp/BulletPriceTemp.json", "r") as f:
                 tempData = dict(f.read())
                 if data[0].name in tempData.keys():
@@ -205,12 +216,12 @@ async def hand(event: Event):
         # 构建详细信息对象
         ammoMoreInfo = AmmoMoreInfo(
             resultData["basePrice"] if basePrice != -1 else basePrice,
-            resultData["avg24hPrice"] if avg24hPrice != -1 else avg24hPrice, 
-            buyFor, 
+            resultData["avg24hPrice"] if avg24hPrice != -1 else avg24hPrice,
+            buyFor,
             craftsFor,
             fleaMarketPrice
         )
-        
+
         # 绘制图片
         imgResult = build_ammo_info(data[0], ammoMoreInfo, qqid)
     else:
@@ -218,7 +229,8 @@ async def hand(event: Event):
 
     # 判断绘制结果 1:成功 0:无数据 -1:失败
     if imgResult == 1:
-        await selectBullet.send(Message(f"[CQ:reply,id={msgid}]") + image(f"{IMAGE_PATH}/tkf-bullet/img/{qqid}.png") + f"本次生成用时{round(time.time()-startTime, 2)}秒")
+        await selectBullet.send(Message(f"[CQ:reply,id={msgid}]") + "您的查询结果如下" + image(
+            f"{IMAGE_PATH}/tkf-bullet/img/{qqid}.png") + f"[本次生成用时{round(time.time() - startTime, 2)}秒]")
         os.remove(f"{IMAGE_PATH}/tkf-bullet/img/{qqid}.png")
         return
     elif imgResult == 0:
@@ -226,6 +238,8 @@ async def hand(event: Event):
     else:
         await selectBullet.finish("查询出现问题,请联系开发者修复")
 
+
+# 更新子弹数据
 @updateBullet.handle()
 async def hand(event: Event):
     if updateAmmoData() == 1:
@@ -233,8 +247,9 @@ async def hand(event: Event):
     else:
         await updateBullet.finish("更新失败")
 
+
 # 每次启动时检查资源文件夹是否存在
-os.makedirs(f"{IMAGE_PATH}/tkf-bullet/img") if not os.path.exists(f"{IMAGE_PATH}/tkf-bullet/img") else...
+os.makedirs(f"{IMAGE_PATH}/tkf-bullet/img") if not os.path.exists(f"{IMAGE_PATH}/tkf-bullet/img") else ...
 os.makedirs(f"{IMAGE_PATH}/tkf-bullet/craft") if not os.path.exists(f"{IMAGE_PATH}/tkf-bullet/craft") else ...
 os.makedirs(f"{IMAGE_PATH}/tkf-bullet/bullet") if not os.path.exists(f"{IMAGE_PATH}/tkf-bullet/bullet") else ...
 os.makedirs(f"{IMAGE_PATH}/tkf-bullet/item") if not os.path.exists(f"{IMAGE_PATH}/tkf-bullet/item") else ...
