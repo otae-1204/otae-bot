@@ -185,3 +185,117 @@ class AmmoMoreInfo:
         self.buyFor = buyFor
         self.craftsFor = craftsFor
         self.fleaMarketPrice = fleaMarketPrice
+
+
+# 物品信息类
+class ItemInfo:
+    """
+    name: str 名称
+    shortName: str 短名称
+    hasGrid: bool 是否有格子
+    basePrice: int 基础价格
+    width: int 宽度
+    height: int 高度
+    img: str 图片名
+    category: str 类别
+    avg24hPrice: int 24小时平均价格
+    low24hPrice: int 24小时最低价格
+    high24hPrice: int 24小时最高价格
+    accuracyModifier: float 精度修正
+    recoilModifier: float 后坐力修正
+    ergonomicsModifier: float 人体工学修正
+    weight: float 重量
+    sellFor: ItemPrice 出售来源
+    buyFor: list[ItemPrice] 购买来源
+    craftsFor: list[Craft] 合成来源
+    craftsUsing: list[Craft] 使用来源
+    """
+    name: str  # 名称
+    shortName: str  # 短名称
+    hasGrid: bool  # 是否有格子
+    basePrice: int  # 基础价格
+    width: int  # 宽度
+    height: int  # 高度
+    img: str  # 图片名
+    category: str  # 类别
+    avg24hPrice: int  # 24小时平均价格
+    low24hPrice: int  # 24小时最低价格
+    high24hPrice: int  # 24小时最高价格
+    accuracyModifier: float  # 精度修正
+    recoilModifier: float  # 后坐力修正
+    ergonomicsModifier: float  # 人体工学修正
+    weight: float  # 重量
+    sellFor: ItemPrice  # 出售来源
+    buyFor: list[ItemPrice]  # 购买来源
+    craftsFor: list[Craft]  # 合成来源
+    craftsUsing: list[Craft]  # 使用来源
+    fleaMarketPrice: int  # 跳蚤市场最近价格
+
+    def __init__(
+            self,
+            name: str,
+            shortName: str,
+            hasGrid: bool,
+            basePrice: int,
+            width: int,
+            height: int,
+            img: str,
+            category: str,
+            avg24hPrice: int,
+            low24hPrice: int,
+            high24hPrice: int,
+            accuracyModifier: float,
+            recoilModifier: float,
+            ergonomicsModifier: float,
+            weight: float,
+            sellFor: ItemPrice,
+            buyFor: list[ItemPrice],
+            craftsFor: list[Craft],
+            craftsUsing: list[Craft],
+            fleaMarketPrice: int
+    ):
+        """
+        构造函数
+        :param name: str 名称
+        :param shortName: str 短名称
+        :param hasGrid: bool 是否有格子
+        :param basePrice: int 基础价格
+        :param width: int 宽度
+        :param height: int 高度
+        :param img: str 图片名
+        :param category: str 类别
+        :param avg24hPrice: int 24小时平均价格
+        :param low24hPrice: int 24小时最低价格
+        :param high24hPrice: int 24小时最高价格
+        :param accuracyModifier: float 精度修正
+        :param recoilModifier: float 后坐力修正
+        :param ergonomicsModifier: float 人体工学修正
+        :param weight: float 重量
+        :param sellFor: ItemPrice 出售来源
+        :param buyFor: list[ItemPrice] 购买来源
+        :param craftsFor: list[Craft] 合成来源
+        :param craftsUsing: list[Craft] 使用来源
+        :param fleaMarketPrice: int 跳蚤市场最近价格
+        """
+        self.name = name
+        self.shortName = shortName
+        self.hasGrid = True if int(hasGrid) == 1 else False
+        self.basePrice = basePrice
+        self.width = width
+        self.height = height
+        self.img = img
+        self.category = category
+        self.avg24hPrice = avg24hPrice
+        self.low24hPrice = low24hPrice
+        self.high24hPrice = high24hPrice
+        self.accuracyModifier = accuracyModifier
+        self.recoilModifier = recoilModifier
+        self.ergonomicsModifier = ergonomicsModifier
+        self.weight = weight
+        self.sellFor = sellFor
+        self.buyFor = buyFor
+        self.craftsFor = craftsFor
+        self.craftsUsing = craftsUsing
+        self.fleaMarketPrice = fleaMarketPrice
+
+
