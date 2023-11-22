@@ -120,10 +120,8 @@ async def hand(event: Event):
 
                 # 更新缓存文件
                 with open(f"{JSON_PATH}/EFTBulletTemp/BulletPriceTemp.json", "a+") as f:
-                    tempData = dict(f.read())
-                    tempData[f"{resultData['name']}"] = [resultData["basePrice"], resultData["avg24hPrice"],
-                                                         resultData["historicalPrices"][
-                                                             len(resultData["historicalPrices"] - 1)]["price"]]
+                    tempData = dict(td := f.read()) if td is not None else {}
+                    tempData[resultData['name']] = [resultData["basePrice"], resultData["avg24hPrice"],resultData["historicalPrices"][len(resultData["historicalPrices"] - 1)]["price"]]
                     f.write(str(tempData))
 
                 # 获取购买来源
@@ -155,14 +153,31 @@ async def hand(event: Event):
 
                 # 更新BuyFor缓存文件
                 with open(f"{JSON_PATH}/EFTBulletTemp/BulletBuyForTemp.json", "a+") as f:
-                    tempData = dict(f.read())
-                    tempData[f"{resultData['name']}"] = buyFor
+                    tempData = dict(td := f.read()) if td is not None else {}
+                    tempDict = {
+                        "price" : buyFor[0].price,
+                        "currency" : buyFor[0].currency,
+                        "priceRUB" : buyFor[0].priceRUB,
+                        "source" : buyFor[0].source,
+                        "requirements" : buyFor[0].requirements
+                    }
+                    tempData[(rd := resultData['name'])] = [tempDict] if rd not in tempData.keys() else tempData[rd].append(tempDict)
                     f.write(str(tempData))
 
                 # 更新CraftsFor缓存文件
                 with open(f"{JSON_PATH}/EFTBulletTemp/BulletCraftsForTemp.json", "a+") as f:
-                    tempData = dict(f.read())
-                    tempData[f"{resultData['name']}"] = craftsFor
+                    tempData = dict(td := f.read()) if td is not None else {}
+                    tempDict = {
+                        "station" : craftsFor[0].station,
+                        "level" : craftsFor[0].level,
+                        "duration" : craftsFor[0].duration,
+                        "requiredItems" : {
+                            "name" : craftsFor[0].requiredItems[0]["name"],
+                            "iconLink" : craftsFor[0].requiredItems[0]["iconLink"],
+                            "count" : craftsFor[0].requiredItems[0]["count"]
+                        }
+                    }
+                    tempData[(rd := resultData['name'])] = [tempDict] if rd not in tempData.keys() else tempData[rd].append(tempDict)
                     f.write(str(tempData))
 
                 # 获取跳蚤市场最近价格
@@ -183,23 +198,43 @@ async def hand(event: Event):
             selectBullet.finish("内部错误") if not os.path.exists(
                 f"{JSON_PATH}/EFTBulletTemp/BulletBuyForTemp.json") else ...
             with open(f"{JSON_PATH}/EFTBulletTemp/BulletBuyForTemp.json", "r") as f:
-                tempData = dict(f.read())
+                tempData = dict(td := f.read()) if td is not None else {}
+                buyFor = []
                 if data[0].name in tempData.keys():
-                    buyFor = tempData[data[0].name]
+                    for i in tempData[data[0].name]:
+                        buyFor.append(
+                            ItemPrice(
+                                i["price"],
+                                i["currency"],
+                                i["priceRUB"],
+                                i["source"],
+                                i["requirements"]
+                            )
+                        )
                 else:
                     buyFor = -1
             selectBullet.finish("内部错误") if not os.path.exists(
                 f"{JSON_PATH}/EFTBulletTemp/BulletCraftsForTemp.json") else ...
             with open(f"{JSON_PATH}/EFTBulletTemp/BulletCraftsForTemp.json", "r") as f:
-                tempData = dict(f.read())
+                tempData = dict(td := f.read()) if td is not None else {}
                 if data[0].name in tempData.keys():
-                    craftsFor = tempData[data[0].name]
+                    craftsFor = []
+                    for i in tempData[data[0].name]:
+                        requiredItems = []
+                        requiredItems.append(
+                            {
+                                "name": i["requiredItems"]["name"],
+                                "iconLink": i["requiredItems"]["iconLink"],
+                                "count": i["requiredItems"]["count"]
+                            }
+                        )
+                        craftsFor.append(Craft(i["station"], i["level"], i["duration"], requiredItems))
                 else:
                     craftsFor = -1
             selectBullet.finish("内部错误") if not os.path.exists(
                 f"{JSON_PATH}/EFTBulletTemp/BulletPriceTemp.json") else ...
             with open(f"{JSON_PATH}/EFTBulletTemp/BulletPriceTemp.json", "r") as f:
-                tempData = dict(f.read())
+                tempData = dict(td := f.read()) if td is not None else {}
                 if data[0].name in tempData.keys():
                     basePrice = tempData[data[0].name][0]
                     avg24hPrice = tempData[data[0].name][1]
