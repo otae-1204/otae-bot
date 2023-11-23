@@ -5,6 +5,7 @@ from nonebot.adapters.onebot.v11 import Bot, GroupMessageEvent
 from configs.path_config import JSON_PATH, IMAGE_PATH
 from utils.message_builder import at, image
 from nonebot.adapters.onebot.v11 import Message
+from nonebot.adapters.onebot.v11.exception import ActionFailed
 
 MarryGroup = on_regex(r"^/娶群友$|^/jrlp$", flags=re.I)
 MarryGroupByForce = on_regex(r"^/强娶(.+?)$")
@@ -22,12 +23,15 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
     date = datetime.date.today().strftime("%Y-%m-%d")
     marryList = read_json(f"{path}MarryList.json")
     if checkTodayMarryByForce(groupId, playerId, date):
-        partnerName = (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] if (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] != "" else (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["nickname"]
-        with open(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg", "wb") as f:
-            f.write(requests.get(f"https://q1.qlogo.cn/g?b=qq&nk={marryList[groupId][playerId]['partnerId']}&s=640").content)
-        await MarryGroup.send(Message(f"[CQ:reply,id={msgid}]") + f"你今天已经娶过人了!\n你的老婆是\n{partnerName}({marryList[groupId][playerId]['partnerId']})"+image(img_name=f"{marryList[groupId][playerId]['partnerId']}.jpg", path=imgPath))
-        os.remove(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg")
-        return
+        try:
+            partnerName = (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] if (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] != "" else (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["nickname"]
+            with open(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg", "wb") as f:
+                f.write(requests.get(f"https://q1.qlogo.cn/g?b=qq&nk={marryList[groupId][playerId]['partnerId']}&s=640").content)
+            await MarryGroup.send(Message(f"[CQ:reply,id={msgid}]") + f"你今天已经娶过人了!\n你的老婆是\n{partnerName}({marryList[groupId][playerId]['partnerId']})"+image(img_name=f"{marryList[groupId][playerId]['partnerId']}.jpg", path=imgPath))
+            os.remove(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg")
+            return
+        except ActionFailed as e:
+            marryList[groupId][playerId]["partnerId"] = None
     if groupId not in marryList.keys():
         marryList[groupId] = { 
                 playerId: {
@@ -106,12 +110,15 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
             "updatableNum": 1 
         }
     if checkTodayMarryByForce(groupId, playerId, date):
-        partnerName = (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] if (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] != "" else (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["nickname"]
-        with open(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg", "wb") as f:
-            f.write(requests.get(f"https://q1.qlogo.cn/g?b=qq&nk={marryList[groupId][playerId]['partnerId']}&s=640").content)
-        await MarryGroupByForce.send(Message(f"[CQ:reply,id={msgId}]") + f"你今天已经娶过人了!\n你的老婆是\n{partnerName}({marryList[groupId][playerId]['partnerId']})"+image(img_name=f"{marryList[groupId][playerId]['partnerId']}.jpg", path=imgPath))
-        os.remove(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg")
-        return
+        try:
+            partnerName = (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] if (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] != "" else (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["nickname"]
+            with open(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg", "wb") as f:
+                f.write(requests.get(f"https://q1.qlogo.cn/g?b=qq&nk={marryList[groupId][playerId]['partnerId']}&s=640").content)
+            await MarryGroupByForce.send(Message(f"[CQ:reply,id={msgId}]") + f"你今天已经娶过人了!\n你的老婆是\n{partnerName}({marryList[groupId][playerId]['partnerId']})"+image(img_name=f"{marryList[groupId][playerId]['partnerId']}.jpg", path=imgPath))
+            os.remove(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg")
+            return
+        except ActionFailed as e:
+            marryList[groupId][playerId]["partnerId"] = None
     if checkTodayMarry(groupId, partnerId, date):
         await MarryGroupByForce.finish(Message(f"[CQ:reply,id={msgId}]") + "今天这个人已经被娶过了!")
     marryList[groupId][playerId]["partnerId"] = partnerId
