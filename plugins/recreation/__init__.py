@@ -20,6 +20,8 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
     playerId = event.get_user_id()
     groupMembers = await bot.get_group_member_list(group_id=groupId)
     date = datetime.date.today().strftime("%Y-%m-%d")
+    if checkTodayMarryByForce(groupId, playerId, date):
+        await MarryGroup.finish(Message(f"[CQ:reply,id={msgid}]") + "你今天已经娶过人了!")
     marryList = read_json(f"{path}MarryList.json")
     if groupId not in marryList.keys():
         marryList[groupId] = { 
@@ -32,7 +34,7 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
             }
     while True:
         partnerId = random.choice(groupMembers)["user_id"]
-        if not checkTodayMarry(groupId, partnerId, date): break
+        if not checkTodayMarry(groupId, partnerId, date) and partnerId != playerId: break
     if partnerId not in marryList[groupId].keys():
         marryList[groupId][partnerId] = {
             "state" : 0,
@@ -65,12 +67,14 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
     partnerId = re.findall(pattern=r"\[CQ:at,qq=(.+?)\]",string=str(event.get_message()))
     # print(str(event.get_message()))
     # print(partnerId)
-    if len(partnerId) == 0:
-        await MarryGroupByForce.finish("你没有@任何人!")
     partnerId = partnerId[0]
     msgId = event.get_event_description().split(" ")[1]
     groupId = event.get_session_id().split("_")[1]
     playerId = event.get_user_id()
+    if len(partnerId) == 0:
+        await MarryGroupByForce.finish(Message(f"[CQ:reply,id={msgId}]") + "你没有@任何人!")
+    if partnerId == playerId:
+        await MarryGroupByForce.finish(Message(f"[CQ:reply,id={msgId}]") + "你不能娶自己!")
     date = datetime.date.today().strftime("%Y-%m-%d")
     marryList = read_json(f"{path}MarryList.json")
     if groupId not in marryList.keys():
