@@ -63,12 +63,15 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
     marryList[groupId][playerId]["partnerId"] = partnerId
     marryList[groupId][playerId]["updateTime"] = date
 
-    write_json(f"{path}MarryList.json", marryList)
-    partnerName = (await bot.get_group_member_info(group_id=groupId, user_id=partnerId))["card"] if (await bot.get_group_member_info(group_id=groupId, user_id=partnerId))["card"] != "" else (await bot.get_group_member_info(group_id=groupId, user_id=partnerId))["nickname"]
-    with open(f"{imgPath}/{partnerId}.jpg", "wb") as f:
-        f.write(requests.get(f"https://q1.qlogo.cn/g?b=qq&nk={partnerId}&s=640").content)
-    await MarryGroup.send(Message(f"[CQ:reply,id={msgid}]") + f"你今天的老婆是\n{partnerName}({partnerId})"+image(img_name=f"{partnerId}.jpg", path=imgPath))
-    os.remove(f"{imgPath}/{partnerId}.jpg")
+    try:
+        partnerName = (await bot.get_group_member_info(group_id=groupId, user_id=partnerId))["card"] if (await bot.get_group_member_info(group_id=groupId, user_id=partnerId))["card"] != "" else (await bot.get_group_member_info(group_id=groupId, user_id=partnerId))["nickname"]
+        write_json(f"{path}MarryList.json", marryList)
+        with open(f"{imgPath}/{partnerId}.jpg", "wb") as f:
+            f.write(requests.get(f"https://q1.qlogo.cn/g?b=qq&nk={partnerId}&s=640").content)
+        await MarryGroup.send(Message(f"[CQ:reply,id={msgid}]") + f"你今天的老婆是\n{partnerName}({partnerId})"+image(img_name=f"{partnerId}.jpg", path=imgPath))
+        os.remove(f"{imgPath}/{partnerId}.jpg")
+    except ActionFailed as e:
+        await MarryGroup.finish(Message(f"[CQ:reply,id={msgid}]") + "这个人不在群里了!")
 
 
 @MarryGroupByForce.handle()
@@ -109,6 +112,7 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
             "partnerId": None,
             "updatableNum": 1 
         }
+
     if checkTodayMarryByForce(groupId, playerId, date):
         try:
             partnerName = (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] if (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] != "" else (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["nickname"]
@@ -125,13 +129,15 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
     marryList[groupId][playerId]["updateTime"] = date
     marryList[groupId][partnerId]["state"] = 1
     marryList[groupId][partnerId]["updateTime"] = date
-    write_json(f"{path}MarryList.json", marryList)
-    partnerName = (await bot.get_group_member_info(group_id=groupId, user_id=partnerId))["card"] if (await bot.get_group_member_info(group_id=groupId, user_id=partnerId))["card"] != "" else (await bot.get_group_member_info(group_id=groupId, user_id=partnerId))["nickname"]
-    with open(f"{imgPath}/{partnerId}.jpg", "wb") as f:
-        f.write(requests.get(f"https://q1.qlogo.cn/g?b=qq&nk={partnerId}&s=640").content)
-    await MarryGroupByForce.send(Message(f"[CQ:reply,id={msgId}]") + f"你今天的老婆是\n{partnerName}({partnerId})"+image(img_name=f"{partnerId}.jpg", path=imgPath))
-    os.remove(f"{imgPath}/{partnerId}.jpg")
-
+    try:
+        partnerName = (await bot.get_group_member_info(group_id=groupId, user_id=partnerId))["card"] if (await bot.get_group_member_info(group_id=groupId, user_id=partnerId))["card"] != "" else (await bot.get_group_member_info(group_id=groupId, user_id=partnerId))["nickname"]
+        write_json(f"{path}MarryList.json", marryList)
+        with open(f"{imgPath}/{partnerId}.jpg", "wb") as f:
+            f.write(requests.get(f"https://q1.qlogo.cn/g?b=qq&nk={partnerId}&s=640").content)
+        await MarryGroupByForce.send(Message(f"[CQ:reply,id={msgId}]") + f"你今天的老婆是\n{partnerName}({partnerId})"+image(img_name=f"{partnerId}.jpg", path=imgPath))
+        os.remove(f"{imgPath}/{partnerId}.jpg")
+    except ActionFailed as e:
+        await MarryGroupByForce.finish(Message(f"[CQ:reply,id={msgId}]") + "这个人不在群里了!")
 
 
 @Divorce.handle()
