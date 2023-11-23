@@ -25,7 +25,7 @@ async def h_r(event: Event):
     content = "".join(str(event.message).split(" ")[1:])
     try:
         url = requests.get(
-            f"https://zh.minecraft.wiki/?search={content}&title=Special%3A%E6%90%9C%E7%B4%A2&profile=default&fulltext=1",proxies=SYSTEM_PROXY)
+            f"https://zh.minecraft.wiki/?search={content}&title=Special%3A%E6%90%9C%E7%B4%A2&profile=default&fulltext=1",proxies={"http":SYSTEM_PROXY})
         src = etree.HTML(url.text).xpath('//a[@data-serp-pos="0"]/@href')
         # print(src)
         if len(src) == 0:
