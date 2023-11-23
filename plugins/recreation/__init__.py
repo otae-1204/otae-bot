@@ -20,9 +20,14 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
     playerId = event.get_user_id()
     groupMembers = await bot.get_group_member_list(group_id=groupId)
     date = datetime.date.today().strftime("%Y-%m-%d")
-    if checkTodayMarryByForce(groupId, playerId, date):
-        await MarryGroup.finish(Message(f"[CQ:reply,id={msgid}]") + "你今天已经娶过人了!")
     marryList = read_json(f"{path}MarryList.json")
+    if checkTodayMarryByForce(groupId, playerId, date):
+        partnerName = (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] if (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] != "" else (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["nickname"]
+        with open(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg", "wb") as f:
+            f.write(requests.get(f"https://q1.qlogo.cn/g?b=qq&nk={marryList[groupId][playerId]['partnerId']}&s=640").content)
+        await MarryGroup.send(Message(f"[CQ:reply,id={msgid}]") + f"你今天已经娶过人了!\n你的老婆是\n{partnerName}({marryList[groupId][playerId]['partnerId']})"+image(img_name=f"{marryList[groupId][playerId]['partnerId']}.jpg", path=imgPath))
+        os.remove(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg")
+        return
     if groupId not in marryList.keys():
         marryList[groupId] = { 
                 playerId: {
@@ -34,7 +39,7 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
             }
     while True:
         partnerId = random.choice(groupMembers)["user_id"]
-        if not checkTodayMarry(groupId, partnerId, date) and partnerId != playerId: break
+        if not checkTodayMarry(groupId, partnerId, date) and str(partnerId) != str(playerId): break
     if partnerId not in marryList[groupId].keys():
         marryList[groupId][partnerId] = {
             "state" : 0,
@@ -51,7 +56,7 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
         }
     marryList[groupId][partnerId]["state"] = 1
     marryList[groupId][partnerId]["updateTime"] = date
-    marryList[groupId][playerId]["partnerId"] = playerId
+    marryList[groupId][playerId]["partnerId"] = partnerId
     marryList[groupId][playerId]["updateTime"] = date
 
     write_json(f"{path}MarryList.json", marryList)
@@ -101,7 +106,12 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
             "updatableNum": 1 
         }
     if checkTodayMarryByForce(groupId, playerId, date):
-        await MarryGroupByForce.finish(Message(f"[CQ:reply,id={msgId}]") + "你今天已经娶过人了!")
+        partnerName = (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] if (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] != "" else (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["nickname"]
+        with open(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg", "wb") as f:
+            f.write(requests.get(f"https://q1.qlogo.cn/g?b=qq&nk={marryList[groupId][playerId]['partnerId']}&s=640").content)
+        await MarryGroupByForce.send(Message(f"[CQ:reply,id={msgId}]") + f"你今天已经娶过人了!\n你的老婆是\n{partnerName}({marryList[groupId][playerId]['partnerId']})"+image(img_name=f"{marryList[groupId][playerId]['partnerId']}.jpg", path=imgPath))
+        os.remove(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg")
+        return
     if checkTodayMarry(groupId, partnerId, date):
         await MarryGroupByForce.finish(Message(f"[CQ:reply,id={msgId}]") + "今天这个人已经被娶过了!")
     marryList[groupId][playerId]["partnerId"] = partnerId
@@ -133,12 +143,14 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
                     "updatableNum": 1 
                 }
             }
+    if playerId not in marryList[groupId].keys():
+        await Divorce.finish(Message(f"[CQ:reply,id={msgId}]") + "你今天还没有娶人!")
     if marryList[groupId][playerId]["partnerId"] == None or marryList[groupId][playerId]["updateTime"] != date:
         await Divorce.finish(Message(f"[CQ:reply,id={msgId}]") + "你今天还没有娶人!")
     if marryList[groupId][playerId]["updatableNum"] == 0:
         await Divorce.finish(Message(f"[CQ:reply,id={msgId}]") + "你今天的次数已经用完了!")
     marryList[groupId][playerId]["updatableNum"] -= 1
-    partnerId = marryList[groupId][playerId]["partnerId"]
+    partnerId = str(marryList[groupId][playerId]["partnerId"])
     marryList[groupId][partnerId]["state"] = 0
     marryList[groupId][partnerId]["updateTime"] = date
     marryList[groupId][playerId]["partnerId"] = None

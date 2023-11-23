@@ -33,7 +33,7 @@ async def h_r(event: Event):
         else:
             await wiki.send(Message(f"[CQ:reply,id={msgid}]图片生成中,请稍后"))
             # await wiki.send(Message(f"[CQ:reply,id={msgid}] 111")) 
-            web_url = "https://zh.minecraft.wiki" + src[0]
+            web_url = "https://zh.minecraft.wiki" + src[0] + "?variant=zh"
             # print(web_url)
             await WebImageBuilders(fillName="wiki", webUrl=web_url)
             img = BuildImage(h=0, w=0, background=IMAGE_PATH+"/wiki.png")
