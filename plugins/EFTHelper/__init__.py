@@ -1,8 +1,8 @@
 import re
 import time
-
+import traceback
 import os
-import requests
+import requests,json
 from nonebot import on_regex, on_command
 from nonebot.adapters import Event
 from nonebot.adapters.onebot.v11 import Message
@@ -111,18 +111,20 @@ async def hand(event: Event):
         try:
             # 获取中文数据
             response = requests.post('https://api.tarkov.dev/graphql', json={'query': query_cn}, headers=headers,
-                                     timeout=15, proxies=SYSTEM_PROXY)
+                                     timeout=15, proxies={"http" : SYSTEM_PROXY})
 
             # 判断是否成功
             if response.status_code == 200:
                 # 获取数据
                 resultData = response.json()["data"]["items"][0]
-
+                fleaMarketPrice = 0
                 # 更新缓存文件
-                with open(f"{JSON_PATH}/EFTBulletTemp/BulletPriceTemp.json", "a+") as f:
-                    tempData = dict(td := f.read()) if td is not None else {}
-                    tempData[resultData['name']] = [resultData["basePrice"], resultData["avg24hPrice"],resultData["historicalPrices"][len(resultData["historicalPrices"] - 1)]["price"]]
-                    f.write(str(tempData))
+                td = read_json(f"{JSON_PATH}/EFTBulletTemp/BulletPriceTemp.json")
+                tempData = td if td is not None else {}
+                index = len(resultData["historicalPrices"]) - 1
+                fleaMarketPrice = resultData["historicalPrices"][index]["price"] if index >= 0 else resultData["basePrice"]
+                tempData[resultData['name']] = [resultData["basePrice"], resultData["avg24hPrice"],fleaMarketPrice]
+                write_json(f"{JSON_PATH}/EFTBulletTemp/BulletPriceTemp.json", tempData)
 
                 # 获取购买来源
                 buyFor = []
@@ -152,36 +154,48 @@ async def hand(event: Event):
                     craftsFor.append(Craft(craft["station"]["name"], craft["level"], craft["duration"], requiredItems))
 
                 # 更新BuyFor缓存文件
-                with open(f"{JSON_PATH}/EFTBulletTemp/BulletBuyForTemp.json", "a+") as f:
-                    tempData = dict(td := f.read()) if td is not None else {}
-                    tempDict = {
-                        "price" : buyFor[0].price,
-                        "currency" : buyFor[0].currency,
-                        "priceRUB" : buyFor[0].priceRUB,
-                        "source" : buyFor[0].source,
-                        "requirements" : buyFor[0].requirements
-                    }
-                    tempData[(rd := resultData['name'])] = [tempDict] if rd not in tempData.keys() else tempData[rd].append(tempDict)
-                    f.write(str(tempData))
+                td = read_json(f"{JSON_PATH}/EFTBulletTemp/BulletBuyForTemp.json")
+                tempData = td if td is not None else {}
+                tempDict = []
+                if len(buyFor) != 0:
+                    for i in buyFor:
+                        tempDict.append({
+                            "price" : i.price,
+                            "currency" : i.currency,
+                            "priceRUB" : i.priceRUB,
+                            "source" : i.source,
+                            "requirements" : i.requirements
+                        })
+                else:
+                    tempDict = []
+                tempData[resultData['name']] = tempDict
+                write_json(f"{JSON_PATH}/EFTBulletTemp/BulletBuyForTemp.json", tempData)
 
                 # 更新CraftsFor缓存文件
-                with open(f"{JSON_PATH}/EFTBulletTemp/BulletCraftsForTemp.json", "a+") as f:
-                    tempData = dict(td := f.read()) if td is not None else {}
-                    tempDict = {
-                        "station" : craftsFor[0].station,
-                        "level" : craftsFor[0].level,
-                        "duration" : craftsFor[0].duration,
-                        "requiredItems" : {
-                            "name" : craftsFor[0].requiredItems[0]["name"],
-                            "iconLink" : craftsFor[0].requiredItems[0]["iconLink"],
-                            "count" : craftsFor[0].requiredItems[0]["count"]
-                        }
-                    }
-                    tempData[(rd := resultData['name'])] = [tempDict] if rd not in tempData.keys() else tempData[rd].append(tempDict)
-                    f.write(str(tempData))
-
-                # 获取跳蚤市场最近价格
-                fleaMarketPrice = resultData["historicalPrices"][len(resultData["historicalPrices"]) - 1]["price"]
+                td = read_json(f"{JSON_PATH}/EFTBulletTemp/BulletCraftsForTemp.json")
+                tempData = td if td is not None else {}
+                tempDict = []
+                if len(craftsFor) != 0:
+                    for i in craftsFor:
+                        requiredItems = []
+                        for item in i.requirements:
+                            requiredItems.append(
+                            {
+                                "name": item["name"],
+                                "iconLink": item["iconLink"],
+                                "count": item["count"]
+                            }
+                        )
+                        tempDict.append({
+                            "name" : i.name,
+                            "level" : i.level,
+                            "duration" : i.duration,
+                            "requiredItems" : requiredItems
+                        })
+                else:
+                    tempDict = []
+                tempData[resultData["name"]] = tempDict
+                write_json(f"{JSON_PATH}/EFTBulletTemp/BulletCraftsForTemp.json", tempData)
 
             # 不成功则使用缓存数据
             else:
@@ -190,86 +204,88 @@ async def hand(event: Event):
         except Exception as e:
             isTempData = True
             print("=-=" * 20)
-            print("Request异常,使用缓存数据:\n", e)
+            print("Request异常,使用缓存数据:\n", traceback.print_exc())
             print("=-=" * 20)
 
-        # 判断是否使用缓存数据      
-        if isTempData:
-            selectBullet.finish("内部错误") if not os.path.exists(
-                f"{JSON_PATH}/EFTBulletTemp/BulletBuyForTemp.json") else ...
-            with open(f"{JSON_PATH}/EFTBulletTemp/BulletBuyForTemp.json", "r") as f:
-                tempData = dict(td := f.read()) if td is not None else {}
-                buyFor = []
-                if data[0].name in tempData.keys():
-                    for i in tempData[data[0].name]:
-                        buyFor.append(
-                            ItemPrice(
-                                i["price"],
-                                i["currency"],
-                                i["priceRUB"],
-                                i["source"],
-                                i["requirements"]
-                            )
-                        )
-                else:
-                    buyFor = -1
-            selectBullet.finish("内部错误") if not os.path.exists(
-                f"{JSON_PATH}/EFTBulletTemp/BulletCraftsForTemp.json") else ...
-            with open(f"{JSON_PATH}/EFTBulletTemp/BulletCraftsForTemp.json", "r") as f:
-                tempData = dict(td := f.read()) if td is not None else {}
-                if data[0].name in tempData.keys():
-                    craftsFor = []
-                    for i in tempData[data[0].name]:
-                        requiredItems = []
-                        requiredItems.append(
-                            {
-                                "name": i["requiredItems"]["name"],
-                                "iconLink": i["requiredItems"]["iconLink"],
-                                "count": i["requiredItems"]["count"]
-                            }
-                        )
-                        craftsFor.append(Craft(i["station"], i["level"], i["duration"], requiredItems))
-                else:
-                    craftsFor = -1
-            selectBullet.finish("内部错误") if not os.path.exists(
-                f"{JSON_PATH}/EFTBulletTemp/BulletPriceTemp.json") else ...
-            with open(f"{JSON_PATH}/EFTBulletTemp/BulletPriceTemp.json", "r") as f:
-                tempData = dict(td := f.read()) if td is not None else {}
+        # 判断是否使用缓存数据 
+        try:    
+            noneTempData = False
+            if isTempData:
+                td = read_json(f"{JSON_PATH}/EFTBulletTemp/BulletPriceTemp.json")
+                tempData = td if td is not None else {}
                 if data[0].name in tempData.keys():
                     basePrice = tempData[data[0].name][0]
                     avg24hPrice = tempData[data[0].name][1]
                     fleaMarketPrice = tempData[data[0].name][2]
+                    
                 else:
-                    basePrice = -1
-                    avg24hPrice = -1
-                    fleaMarketPrice = -1
+                    noneTempData = True
 
-        if buyFor == -1 or craftsFor == -1:
+                td = read_json(f"{JSON_PATH}/EFTBulletTemp/BulletCraftsForTemp.json")
+                tempData = td if td is not None else {}
+                buyFor = []
+                for buy in tempData[data[0].name][0]:
+                    buyFor.append(
+                        ItemPrice(
+                            buy["price"],
+                            buy["currency"],
+                            buy["priceRUB"],
+                            buy["source"],
+                            buy["requirements"]
+                        )
+                    )
+                else:
+                    noneTempData = True
+                
+                td = read_json(f"{JSON_PATH}/EFTBulletTemp/BulletCraftsForTemp.json")
+                tempData = td if td is not None else {}
+                craftsFor = []
+                if data[0].name in tempData.keys():
+                    for i in tempData[data[0].name]:
+                        requiredItems = []
+                        for item in i["requiredItems"]:
+                            requiredItems.append(
+                            {
+                                "name": item["name"],
+                                "iconLink": item["iconLink"],
+                                "count": item["count"]
+                            }
+                        )
+                        craftsFor.append(Craft(i["station"], i["level"], i["duration"], requiredItems))
+                else:
+                    noneTempData = True
+
+        except Exception as e:
+            print("=-=" * 20)
+            print("读取缓存数据异常:\n", traceback.print_exc())
+            print("=-=" * 20)
+            noneTempData = True
+        
+        if noneTempData:
             # 若没有缓存数据则绘制粗略图
             imgResult = build_ammo_image(data, qqid)
-
-        # 构建详细信息对象
-        ammoMoreInfo = AmmoMoreInfo(
-            resultData["basePrice"] if basePrice != -1 else basePrice,
-            resultData["avg24hPrice"] if avg24hPrice != -1 else avg24hPrice,
-            buyFor,
-            craftsFor,
-            fleaMarketPrice
-        )
-
-        # 绘制图片
-        imgResult = build_ammo_info(data[0], ammoMoreInfo, qqid)
+        else:
+            # 构建详细信息对象
+            ammoMoreInfo = AmmoMoreInfo(
+                resultData["basePrice"] if basePrice != -1 else basePrice,
+                resultData["avg24hPrice"] if avg24hPrice != -1 else avg24hPrice,
+                buyFor,
+                craftsFor,
+                fleaMarketPrice
+            )
+            # 绘制图片
+            imgResult = build_ammo_info(data[0], ammoMoreInfo, qqid)
     else:
         imgResult = build_ammo_image(data, qqid)
 
     # 判断绘制结果 1:成功 0:无数据 -1:失败
     if imgResult == 1:
         await selectBullet.send(Message(f"[CQ:reply,id={msgid}]") + "您的查询结果如下" + image(
-            f"{IMAGE_PATH}/tkf-bullet/img/{qqid}.png") + f"[本次生成用时{round(time.time() - startTime, 2)}秒]")
-        os.remove(f"{IMAGE_PATH}/tkf-bullet/img/{qqid}.png")
+            f"{IMAGE_PATH}EFTHelper/img/{qqid}.png") + f"[本次生成用时{round(time.time() - startTime, 2)}秒]")
+        os.remove(f"{IMAGE_PATH}EFTHelper/img/{qqid}.png")
         return
     elif imgResult == 0:
-        await selectBullet.send(Message(f"[CQ:reply,id={msgid}]") + image(f"{IMAGE_PATH}/tkf-bullet/img/无数据.png"))
+        await selectBullet.send(Message(f"[CQ:reply,id={msgid}]") + image(f"{IMAGE_PATH}EFTHelper/img/无数据.png"))
     else:
         await selectBullet.finish("查询出现问题,请联系开发者修复")
 
@@ -282,12 +298,59 @@ async def hand(event: Event):
     else:
         await updateBullet.finish("更新失败")
 
+def read_json(file_path, create_if_not_exists=True):
+    """
+    读取 JSON 文件并返回字典，如果文件不存在则创建新文件
+    :param file_path: 文件路径
+    :param create_if_not_exists: 如果文件不存在是否创建，默认为 True
+    :return: 字典
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as json_file:
+            data = json.load(json_file)
+        return data
+    except FileNotFoundError:
+        if create_if_not_exists:
+            print(f"File '{file_path}' not found. Creating a new file.")
+            write_json(file_path, {})  # 创建新文件并写入空字典
+            return {}
+        else:
+            print(f"Error: File '{file_path}' not found.")
+            return None
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON in file '{file_path}': {e}")
+        return None
+
+def write_json(file_path, data):
+    """
+    将字典写入 JSON 文件
+    :param file_path: 文件路径
+    :param data: 要写入的字典
+    """
+    try:
+        with open(file_path, 'w', encoding='utf-8') as json_file:
+            json.dump(data, json_file, ensure_ascii=False, indent=2)
+        print(f"Data written to '{file_path}' successfully.")
+    except json.JSONDecodeError as e:
+        print(f"Error encoding JSON data: {e}")
+
+
+
 
 # 每次启动时检查资源文件夹是否存在
-os.makedirs(f"{IMAGE_PATH}/tkf-bullet/img") if not os.path.exists(f"{IMAGE_PATH}/tkf-bullet/img") else ...
-os.makedirs(f"{IMAGE_PATH}/tkf-bullet/craft") if not os.path.exists(f"{IMAGE_PATH}/tkf-bullet/craft") else ...
-os.makedirs(f"{IMAGE_PATH}/tkf-bullet/bullet") if not os.path.exists(f"{IMAGE_PATH}/tkf-bullet/bullet") else ...
-os.makedirs(f"{IMAGE_PATH}/tkf-bullet/item") if not os.path.exists(f"{IMAGE_PATH}/tkf-bullet/item") else ...
-os.makedirs(f"{IMAGE_PATH}/tkf-bullet/traders") if not os.path.exists(f"{IMAGE_PATH}/tkf-bullet/traders") else ...
-os.makedirs(f"{IMAGE_PATH}/tkf-bullet/UI") if not os.path.exists(f"{IMAGE_PATH}/tkf-bullet/UI") else ...
+os.makedirs(f"{IMAGE_PATH}/EFTHelper/img") if not os.path.exists(f"{IMAGE_PATH}/EFTHelper/img") else ...
+os.makedirs(f"{IMAGE_PATH}/EFTHelper/craft") if not os.path.exists(f"{IMAGE_PATH}/EFTHelper/craft") else ...
+os.makedirs(f"{IMAGE_PATH}/EFTHelper/bullet") if not os.path.exists(f"{IMAGE_PATH}/EFTHelper/bullet") else ...
+os.makedirs(f"{IMAGE_PATH}/EFTHelper/item") if not os.path.exists(f"{IMAGE_PATH}/EFTHelper/item") else ...
+os.makedirs(f"{IMAGE_PATH}/EFTHelper/traders") if not os.path.exists(f"{IMAGE_PATH}/EFTHelper/traders") else ...
+os.makedirs(f"{IMAGE_PATH}/EFTHelper/UI") if not os.path.exists(f"{IMAGE_PATH}/EFTHelper/UI") else ...
 os.makedirs(f"{JSON_PATH}/EFTBulletTemp") if not os.path.exists(f"{JSON_PATH}/EFTBulletTemp") else ...
+if not os.path.exists(f"{JSON_PATH}/EFTBulletTemp/BulletPriceTemp.json"):
+    with open(f"{JSON_PATH}/EFTBulletTemp/BulletPriceTemp.json", "w") as f:
+        f.write("{}")
+if not os.path.exists(f"{JSON_PATH}/EFTBulletTemp/BulletBuyForTemp.json"):
+    with open(f"{JSON_PATH}/EFTBulletTemp/BulletBuyForTemp.json", "w") as f:
+        f.write("{}")
+if not os.path.exists(f"{JSON_PATH}/EFTBulletTemp/BulletCraftsForTemp.json"):
+    with open(f"{JSON_PATH}/EFTBulletTemp/BulletCraftsForTemp.json", "w") as f:
+        f.write("{}")

@@ -4,7 +4,7 @@ import pymysql
 from plugins.EFTHelper.object import Ammo
 import os
 from utils.user_agent import get_user_agent
-from configs.config import SYSTEM_PROXY
+from configs.config import SYSTEM_PROXY, password, user, address
 
 path = IMAGE_PATH + 'EFTHelper/'
 
@@ -101,7 +101,7 @@ def query_task_name(taskId):
     query_task = '{task(id:"' + taskId + '",lang:zh){name}}'
     headers = {"Content-Type": "application/json"}
     response = requests.post('https://api.tarkov.dev/graphql', json={
-        'query': query_task}, headers=headers, timeout=30, proxies=SYSTEM_PROXY)
+        'query': query_task}, headers=headers, timeout=30, proxies={"http" : SYSTEM_PROXY})
     if response.status_code == 200:
         result = response.json()
     else:
@@ -217,7 +217,7 @@ def process_ammo_data(db, ammo_data) -> int:
                     os.remove(image_path)
                 # 下载新图片
                 result = requests.get(
-                    i["item"]["iconLink"], timeout=30, proxies=SYSTEM_PROXY)
+                    i["item"]["iconLink"], timeout=30, proxies={"http" : SYSTEM_PROXY})
                 if result.status_code == 200:
                     img_path = caliber.replace("毫米", "mm").replace(
                         "/", "_").replace('"', "") + " " + name.rstrip().replace('"', "")
@@ -231,7 +231,7 @@ def process_ammo_data(db, ammo_data) -> int:
                 db.insertAmmo(new_ammo)
                 # 下载新图片
                 result = requests.get(
-                    i["item"]["iconLink"], timeout=30, proxies=SYSTEM_PROXY)
+                    i["item"]["iconLink"], timeout=30, proxies={"http" : SYSTEM_PROXY})
                 if result.status_code == 200:
                     img_path = caliber.replace("毫米", "mm").replace(
                         "/", "_").replace('"', "") + " " + name.rstrip().replace('"', "")
@@ -244,16 +244,18 @@ def process_ammo_data(db, ammo_data) -> int:
 
         return 1
     except Exception as e:
+        print("处理子弹数据时出现错误:\n")
         print(e)
+        
         return -1
 
 
 def updateAmmoData() -> int:
-    try:
+    # try:
         db = DatabaseDao()
         headers = {"Content-Type": "application/json"}
         response = requests.post('https://api.tarkov.dev/graphql', json={
-            'query': query_cn}, headers=headers, timeout=30, proxies=SYSTEM_PROXY)
+            'query': query_cn}, headers=headers, timeout=30, proxies={"http" : SYSTEM_PROXY})
         if response.status_code == 200:
             cnData = response.json()
         else:
@@ -261,9 +263,10 @@ def updateAmmoData() -> int:
                 response.status_code, query_cn))
 
         return process_ammo_data(db, cnData)
-    except Exception as e:
-        print(e)
-        return -1
+    # except Exception as e:
+    #     print("更新子弹数据时出现错误:\n")
+    #     print(e.args)
+    #     return -1
 
 
 # 数据库操作类
@@ -281,7 +284,7 @@ class DatabaseDao:
         """
         try:
             conn = pymysql.connect(
-                host="localhost", user="root", password="20040824", database="tkf_bullet_data")
+                host="localhost", user=user, password=password, database="tkf_bullet_data")
         except Exception as e:
             print(e)
         return conn
@@ -315,6 +318,7 @@ class DatabaseDao:
                                       ammo.marketSale))
             self.conn.commit()
         except Exception as e:
+            print("插入数据时出现错误:\n")
             print(e)
         finally:
             self.closeAll()
@@ -337,6 +341,7 @@ class DatabaseDao:
             else:
                 return result[0]
         except Exception as e:
+            print("查询数据时出现错误:\n")
             print(e)
         finally:
             self.closeAll()
@@ -377,6 +382,7 @@ class DatabaseDao:
             sql = "TRUNCATE TABLE bulletdata"
             self.cursor.execute(sql)
         except Exception as e:
+            print("删除数据时出现错误:\n")
             print(e)
         finally:
             self.closeAll()
@@ -409,6 +415,7 @@ class DatabaseDao:
             print(ammoList)
             return ammoList
         except Exception as e:
+            print("通过名称查询数据时出现错误:\n")
             print(e)
             return []
         finally:
@@ -439,6 +446,7 @@ class DatabaseDao:
                 ammoList.append(ammo)
             return ammoList
         except Exception as e:
+            print("通过ID查询数据时出现错误:\n")
             print(e)
             return []
         finally:
@@ -470,6 +478,7 @@ class DatabaseDao:
                 ammoList.append(ammo)
             return ammoList
         except Exception as e:
+            print("通过口径查询数据时出现错误:\n")
             print(e)
             return []
         finally:
@@ -569,6 +578,7 @@ class DatabaseDao:
                 # print(ammoList)
             return ammoList
         except Exception as e:
+            print("通过多条件查询数据时出现错误:\n")
             print(e)
             return []
         finally:
@@ -650,6 +660,7 @@ class DatabaseDao:
                 ammoList.append(ammo)
             return ammoList
         except Exception as e:
+            print("通过单条件查询数据时出现错误:\n")
             print(e)
             return []
         finally:

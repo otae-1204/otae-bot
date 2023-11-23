@@ -18,6 +18,7 @@ def build_ammo_image(ammo, qqId) -> int:
         if len(ammo) == 0:
             return 0
     except Exception as e:
+        print("粗略图绘制失败")
         print(e)
         return -1
 
@@ -172,6 +173,7 @@ def build_ammo_image(ammo, qqId) -> int:
         print("=-=" * 20)
         return 1
     except Exception as e:
+        print("粗略图图片绘制失败")
         print(e)
         return -1
 
@@ -379,6 +381,7 @@ def build_ammo_info(ammoInfo, ammoMoreInfo: AmmoMoreInfo, qqId) -> int:
             imgText = f"traders/{ammoMoreInfo.buyFor[i].source.capitalize()}-{level}.png" if ammoMoreInfo.buyFor[
                                                                                                  i].source != "fleaMarket" else "traders/fleaMarket.png "
             # 绘制源头像
+            if not os.path.exists(path + imgText): DLTradersLevelsImg()
             buyForImg = BuildImage(w=640, h=640, background=path + imgText)
             bg.paste(buyForImg, (480, 4050 + i * 820), alpha=True)
 
@@ -468,7 +471,7 @@ def build_ammo_info(ammoInfo, ammoMoreInfo: AmmoMoreInfo, qqId) -> int:
                 if not os.path.exists(path + f"item/{name}.png"):
                     # 下载图片
                     result = requests.get(ammoMoreInfo.craftsFor[i].requirements[j]["iconLink"], timeout=30,
-                                          proxies=SYSTEM_PROXY)
+                                          proxies={"http":SYSTEM_PROXY})
                     if result.status_code == 200:
                         with open(path + f"item/{name}.png", 'wb') as f:
                             f.write(result.content)
@@ -521,7 +524,7 @@ traders {
 }
 """
     response = requests.post('https://api.tarkov.dev/graphql', json={'query': query_str}, headers=get_user_agent(),
-                             timeout=30, proxies=SYSTEM_PROXY)
+                             timeout=30, proxies={"http":SYSTEM_PROXY})
     if response.status_code == 200:
         result = response.json()
     else:
@@ -536,7 +539,7 @@ traders {
                 if level["imageLink"] is not None:
                     if not os.path.exists(path + f"traders/{trader['name'].capitalize()}-{levelNum}.png"):
                         # 下载图片
-                        result = requests.get(level["imageLink"], timeout=30, proxies=SYSTEM_PROXY)
+                        result = requests.get(level["imageLink"], timeout=30, proxies={"http":SYSTEM_PROXY})
                         if result.status_code == 200:
                             with open(path + f"traders/{trader['name'].capitalize()}-{levelNum}.png", 'wb') as f:
                                 f.write(result.content)
