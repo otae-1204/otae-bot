@@ -58,6 +58,8 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
             "partnerId": None,
             "updatableNum": 1 
         }
+    if marryList[groupId][playerId]["updateTime"] != date:
+        marryList[groupId][playerId]["updatableNum"] = 1
     marryList[groupId][partnerId]["state"] = 1
     marryList[groupId][partnerId]["updateTime"] = date
     marryList[groupId][playerId]["partnerId"] = partnerId
@@ -125,6 +127,8 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
             marryList[groupId][playerId]["partnerId"] = None
     if checkTodayMarry(groupId, partnerId, date):
         await MarryGroupByForce.finish(Message(f"[CQ:reply,id={msgId}]") + "今天这个人已经被娶过了!")
+    if marryList[groupId][playerId]["updateTime"] != date:
+        marryList[groupId][playerId]["updatableNum"] = 1
     marryList[groupId][playerId]["partnerId"] = partnerId
     marryList[groupId][playerId]["updateTime"] = date
     marryList[groupId][partnerId]["state"] = 1
