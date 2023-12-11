@@ -160,8 +160,8 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
         marryList[groupId][partnerId]["state"] = 0
         marryList[groupId][partnerId]["updateTime"] = date
         marryList[groupId][partnerId]["partnerId"] = None
-        write_json(f"{path}MarryList.json", marryList)
         marryList[groupId][playerId]["updatableNum"] -= 1
+        write_json(f"{path}MarryList.json", marryList)
         await Divorce.finish(Message(f"[CQ:reply,id={msgId}]") + f"你成功离婚了,你的离婚次数还有{marryList[groupId][playerId]['updatableNum']}次")
     else:
         await Divorce.finish(Message(f"[CQ:reply,id={msgId}]") + "你今天还没结婚呢!")
