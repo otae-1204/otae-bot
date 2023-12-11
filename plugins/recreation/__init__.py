@@ -50,7 +50,8 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
     if playerState == "未娶":
         partnerId = random.choice(groupMembers)["user_id"]
         while True:
-            if checkPlayerState(groupId, partnerId, date, marryList) == "已被娶" or partnerId == playerId or checkPlayerState(groupId, partnerId, date, marryList) == "已娶":
+            state = checkPlayerState(groupId, partnerId, date, marryList)
+            if state == "已被娶" or partnerId == playerId or state == "已娶":
                 partnerId = random.choice(groupMembers)["user_id"]
             else:
                 break        
@@ -113,8 +114,11 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
             marryList[groupId][playerId]["partnerId"] = None
             await MarryGroupByForce.finish(Message(f"[CQ:reply,id={msgId}]") + "这个人不在群里了!")
     if playerState == "未娶":
-        if checkPlayerState(groupId, partnerId, date, marryList) == "已被娶":
-            await MarryGroupByForce.finish(Message(f"[CQ:reply,id={msgId}]") + "这个人今天已经被娶过了!")
+        state = checkPlayerState(groupId, partnerId, date, marryList)
+        if state == "已被娶":
+            await MarryGroupByForce.finish(Message(f"[CQ:reply,id={msgId}]") + "这个人今天已经被娶走了!")
+        elif state == "已娶":
+            await MarryGroupByForce.finish(Message(f"[CQ:reply,id={msgId}]") + "这个人今天已经有老婆了!")
         marryList[groupId][playerId]["state"] = 1
         marryList[groupId][playerId]["updateTime"] = date
         marryList[groupId][playerId]["partnerId"] = partnerId
@@ -144,8 +148,11 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
     marryList = read_json(f"{path}MarryList.json")
     playerState = checkPlayerState(groupId, playerId, date, marryList)
     if playerState == "已娶" or playerState == "已被娶":
-        if marryList[groupId][playerId]["updatableNum"] == 0 and marryList[groupId][playerId]["updateTime"] == date:
-            await Divorce.finish(Message(f"[CQ:reply,id={msgId}]") + "你今天没有离婚次数了!")
+        if marryList[groupId][playerId]["updateTime"] == date:
+            if marryList[groupId][playerId]["updatableNum"] == 0:
+                await Divorce.finish(Message(f"[CQ:reply,id={msgId}]") + "你今天的离婚次数已经用完了!")
+        else:
+            marryList[groupId][playerId]["updatableNum"] = updatableNum
         partnerId = str(marryList[groupId][playerId]["partnerId"])
         marryList[groupId][playerId]["state"] = 0
         marryList[groupId][playerId]["updateTime"] = date
