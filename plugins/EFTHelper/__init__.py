@@ -15,6 +15,7 @@ from plugins.EFTHelper.buildImg import build_ammo_image, build_ammo_info
 from plugins.EFTHelper.db import DatabaseDao, updateAmmoData
 from plugins.EFTHelper.object import AmmoMoreInfo, Craft, ItemPrice
 from utils.message_builder import image
+from utils.logs import LogUtils
 
 ALL_PERMISSION = GROUP_ADMIN | GROUP_OWNER | SUPERUSER
 
@@ -30,6 +31,7 @@ caliberEpithet = {
     "7.62x51": ["762x51", ".308", "NATO"]
 }
 
+LogUtils.set_log_format("EFTHelper")
 
 # 查询子弹数据
 @selectBullet.handle()
@@ -202,10 +204,7 @@ async def hand(event: Event):
                 isTempData = True
         # request异常则使用缓存数据
         except Exception as e:
-            isTempData = True
-            print("=-=" * 20)
-            print("Request异常,使用缓存数据:\n", traceback.print_exc())
-            print("=-=" * 20)
+            LogUtils.error("Request异常,使用缓存数据:\n" + traceback.format_exc())
 
         # 判断是否使用缓存数据 
         try:    
@@ -256,9 +255,7 @@ async def hand(event: Event):
                     noneTempData = True
 
         except Exception as e:
-            print("=-=" * 20)
-            print("读取缓存数据异常:\n", traceback.print_exc())
-            print("=-=" * 20)
+            LogUtils.error("读取缓存数据异常:\n" + traceback.format_exc())
             noneTempData = True
         
         if noneTempData:
@@ -287,17 +284,22 @@ async def hand(event: Event):
     elif imgResult == 0:
         await selectBullet.send(Message(f"[CQ:reply,id={msgid}]") + image(f"{IMAGE_PATH}EFTHelper/img/无数据.png"))
     else:
+        LogUtils.error("绘制图片失败")
         await selectBullet.finish("查询出现问题,请联系开发者修复")
 
 
 # 更新子弹数据
 @updateBullet.handle()
 async def hand(event: Event):
-    if updateAmmoData() == 1:
-        await updateBullet.finish("更新成功")
-    else:
+    try:
+        if updateAmmoData() == 1:
+            await updateBullet.finish("更新成功")
+        else:
+            await updateBullet.finish("更新失败")
+    except Exception as e:
+        LogUtils.error("更新子弹数据异常:\n" + traceback.format_exc())
         await updateBullet.finish("更新失败")
-
+        
 def read_json(file_path, create_if_not_exists=True):
     """
     读取 JSON 文件并返回字典，如果文件不存在则创建新文件
