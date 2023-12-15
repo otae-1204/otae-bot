@@ -7,15 +7,14 @@ from .utils import ConfigsManager
 NICKNAME: str = "otae"
 
 # 数据库（必要）
-# 如果填写了bind就不需要再填写后面的字段了#）
 # 示例："bind": "postgresql://user:password@127.0.0.1:5432/database"
-bind: str = ""  # 数据库连接链接
+bind: str = "mysql://root:20040824@localhost:3306/db_otaebot"  # 数据库连接链接
 sql_name: str = "postgresql"
 user: str = "otae"  # 数据用户名
 password: str = "otae"  # 数据库密码
 address: str = "127.0.0.1"  # 数据库地址
 port: str = ""  # 数据库端口
-database: str = ""  # 数据库名称
+database: str = "db_otaebot"  # 数据库名称
 
 # 代理，例如 "http://127.0.0.1:7890"
 SYSTEM_PROXY: Optional[str] = {"https":"https://127.0.0.1:7890","http":"http://127.0.0.1:7890"}  # 全局代理

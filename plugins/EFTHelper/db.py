@@ -252,17 +252,17 @@ def process_ammo_data(db, ammo_data) -> int:
 
 def updateAmmoData() -> int:
     # try:
-        db = DatabaseDao()
-        headers = {"Content-Type": "application/json"}
-        response = requests.post('https://api.tarkov.dev/graphql', json={
-            'query': query_cn}, headers=headers, timeout=30, proxies={"http" : SYSTEM_PROXY})
-        if response.status_code == 200:
-            cnData = response.json()
-        else:
-            print("查询无法运行，返回的代码为 {}. {}".format(
-                response.status_code, query_cn))
+    db = DatabaseDao()
+    headers = {"Content-Type": "application/json"}
+    response = requests.post('https://api.tarkov.dev/graphql', json={
+        'query': query_cn}, headers=headers, timeout=30, proxies={"http" : SYSTEM_PROXY})
+    if response.status_code == 200:
+        cnData = response.json()
+    else:
+        print("查询无法运行，返回的代码为 {}. {}".format(
+            response.status_code, query_cn))
 
-        return process_ammo_data(db, cnData)
+    return process_ammo_data(db, cnData)
     # except Exception as e:
     #     print("更新子弹数据时出现错误:\n")
     #     print(e.args)

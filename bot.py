@@ -2,10 +2,12 @@
 
 import nonebot
 from nonebot.adapters.onebot.v11 import Adapter as ONEBOT_V11Adapter
+from utils.db import check_db_connection
 
 # Custom your logger
 #
 # from nonebot.log import logger, default_format
+
 # logger.add("error.log",
 #            rotation="00:00",
 #            diagnose=False,
@@ -24,11 +26,7 @@ driver.register_adapter(ONEBOT_V11Adapter)
 # As an alternative, you should use command `nb` or modify `pyproject.toml` to load plugins
 nonebot.load_from_toml("pyproject.toml")
 nonebot.load_builtin_plugins("echo")
-
-# Modify some config / config depends on loaded configs
-#
-# config = driver.config
-# do something...
+check_db_connection()
 
 
 if __name__ == "__main__":

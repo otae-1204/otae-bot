@@ -16,10 +16,12 @@ TEMP_PATH = Path("res/img/temp/")
 EXECUTABLE_PATH = Path("phantomjs-2.1.1-windows/bin/phantomjs.exe")
 # Json路径
 JSON_PATH = Path("res/json/")
+# sql文件路径
+SQL_PATH = Path("res/sql/")
     
 
 def init_path():
-    global IMAGE_PATH, VOICE_PATH, TEXT_PATH, LOG_PATH, FONT_PATH, TEMP_PATH, JSON_PATH
+    global IMAGE_PATH, VOICE_PATH, TEXT_PATH, FONT_PATH, TEMP_PATH, JSON_PATH, SQL_PATH
     IMAGE_PATH.mkdir(parents=True, exist_ok=True)
     VOICE_PATH.mkdir(parents=True, exist_ok=True)
     TEXT_PATH.mkdir(parents=True, exist_ok=True)
@@ -27,6 +29,7 @@ def init_path():
     FONT_PATH.mkdir(parents=True, exist_ok=True)
     TEMP_PATH.mkdir(parents=True, exist_ok=True)
     JSON_PATH.mkdir(parents=True, exist_ok=True)
+    SQL_PATH.mkdir(parents=True, exist_ok=True)
 
     IMAGE_PATH = str(IMAGE_PATH.absolute()) + '/'
     VOICE_PATH = str(VOICE_PATH.absolute()) + '/'
@@ -35,6 +38,7 @@ def init_path():
     FONT_PATH = str(FONT_PATH.absolute()) + '/'
     TEMP_PATH = str(TEMP_PATH.absolute()) + '/'
     JSON_PATH = str(JSON_PATH.absolute()) + '/'
+    SQL_PATH = str(SQL_PATH.absolute()) + '/'
 
 
 init_path()
