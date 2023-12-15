@@ -6,9 +6,11 @@ nonebot_plugin_apscheduler==0.3.0
 nonebot2[FastAPI]
 nonebot2==2.1.1
 playwright
-PyMySQL==1.1.0
 requests==2.31.0
 ruamel.yaml==0.17.32
 lxml==4.9.3
 pytz==2023.3.post1
 pypinyin==0.49.0
+mysql-connector-python
+mysqlclient
+sqlalchemy
