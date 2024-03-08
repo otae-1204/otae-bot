@@ -1,3 +1,8 @@
+from sqlalchemy import create_engine, Column, INT, VARCHAR, Sequence, FLOAT
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
+
 # 子弹信息类
 class Ammo:
     """
@@ -299,3 +304,30 @@ class ItemInfo:
         self.fleaMarketPrice = fleaMarketPrice
 
 
+class dbAmmo(Base):
+    """
+    子弹数据库类
+    """
+    __tablename__ = 'bulletdata'
+    id = Column(INT, Sequence('bulletdata_id_seq'), primary_key=True)
+    name = Column(VARCHAR(255))
+    caliber = Column(VARCHAR(255))
+    weight = Column(FLOAT)
+    stackMaxSize = Column(INT)
+    tracer = Column(VARCHAR(255))
+    tracerColor = Column(VARCHAR(255))
+    damage = Column(VARCHAR(255))
+    armorDamage = Column(FLOAT)
+    fragmentationChance = Column(FLOAT)
+    ricochetChance = Column(FLOAT)
+    penetrationPower = Column(INT)
+    accuracyModifier = Column(FLOAT)
+    recoilModifier = Column(FLOAT)
+    lightBleedModifier = Column(FLOAT)
+    heavyBleedModifier = Column(FLOAT)
+    img = Column(VARCHAR(255))
+    marketSale = Column(INT)
+    apiID = Column(VARCHAR(255))
+    projectileCount = Column(INT)
+    initialSpeed = Column(FLOAT)
+    staminaBurnPerDamage = Column(FLOAT)

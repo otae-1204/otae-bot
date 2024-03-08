@@ -13,4 +13,8 @@ pytz==2023.3.post1
 pypinyin==0.49.0
 mysql-connector-python
 mysqlclient
-sqlalchemy
+sqlalchemy==1.4.0
+aiomysql
+httpx
+Pillow==9.5.0
+colorlog

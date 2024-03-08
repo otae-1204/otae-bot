@@ -104,14 +104,14 @@ def build_ammo_image(ammo, qqId) -> int:
                     130, 149, 153), plain_text="id:" + str(ammoList[i][j].id), is_alpha=True)
                 row.paste(idTxt, (50, 315), alpha=True)
                 row.text(pos=(405, -10), text="名称 " +
-                                              ammoList[i][j].name, fill=(0, 0, 0))
+                                              ammoList[i][j].name, fill=(80,80,80))
                 row.text(pos=(405, 85), text="口径 " +
-                                             ammoList[i][j].caliber, fill=(0, 0, 0))
+                                             ammoList[i][j].caliber, fill=(80,80,80))
                 row.text(pos=(405, 180), text="肉伤 " + (((str(ammoList[i][j].projectileCount) + "x")
                                                         if ammoList[i][j].projectileCount != 1 else "") + str(
-                    ammoList[i][j].damage)), fill=(0, 0, 0))
+                    ammoList[i][j].damage)), fill=(80,80,80))
                 row.text(pos=(405, 275), text="穿甲 " +
-                                              str(ammoList[i][j].penetrationPower), fill=(0, 0, 0))
+                                              str(ammoList[i][j].penetrationPower), fill=(80,80,80))
                 accuracyModifier = round(
                     ammoList[i][j].accuracyModifier * 100, 1)
                 print("子弹基础信息绘制完毕")
@@ -122,8 +122,8 @@ def build_ammo_image(ammo, qqId) -> int:
                 elif accuracyModifier < 0:
                     color = (255, 0, 0)
                 else:
-                    color = (0, 0, 0)
-                row.text(pos=(825, 180), text="精度", fill=(0, 0, 0))
+                    color = (80,80,80)
+                row.text(pos=(825, 180), text="精度", fill=(80,80,80))
                 row.text(pos=(1010, 180), text=("+" + str(accuracyModifier) + "%" if accuracyModifier > 0 else
                                                 str(accuracyModifier) + "%"), fill=color)
                 recoilModifier = round(ammoList[i][j].recoilModifier * 100, 1)
@@ -135,8 +135,8 @@ def build_ammo_image(ammo, qqId) -> int:
                 elif recoilModifier < 0:
                     color = (0, 255, 0)
                 else:
-                    color = (0, 0, 0)
-                row.text(pos=(825, 275), text="后座", fill=(0, 0, 0))
+                    color = (80,80,80)
+                row.text(pos=(825, 275), text="后座", fill=(80,80,80))
                 row.text(pos=(1010, 275), text=("+" + str(recoilModifier) + "%" if recoilModifier > 0 else
                                                 str(recoilModifier) + "%"), fill=color)
                 row.text(pos=(
@@ -154,7 +154,7 @@ def build_ammo_image(ammo, qqId) -> int:
                 row.text(
                     pos=(1325, 275), text="曳" if ammoList[i][j].tracer else " ", fill=color)
                 row.text(pos=(
-                    1425, 275), text="亚" if ammoList[i][j].initialSpeed <= 340 else " ", fill=(0, 0, 0))
+                    1425, 275), text="亚" if ammoList[i][j].initialSpeed <= 340 else " ", fill=(80,80,80))
                 print("子弹弹迹绘制完毕")
 
                 # 粘贴行
