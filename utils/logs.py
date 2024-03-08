@@ -1,12 +1,30 @@
-import logging
-from nonebot.log import logger
+import logging,colorlog
+
+log_colors = {
+    'DEBUG': 'cyan',
+    'INFO': 'green',
+    'WARNING': 'yellow',
+    'ERROR': 'red',
+    'CRITICAL': 'bold_red',
+}
+
 
 class LogUtils:
     """
     日志工具类
     """
     def __init__(self, name):
-        self.logger = logging.getLogger(name)
+        self.logger = logging.getLogger(__name__)
+        formatter = colorlog.ColoredFormatter(
+            f'%(log_color)s[%(asctime)s]-[{name}]-%(levelname)s-%(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S',
+            log_colors=log_colors
+        )
+        handler = logging.StreamHandler()
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
+        self.logger.setLevel(logging.DEBUG)
+
 
     def info(self, message):
         """
@@ -35,11 +53,3 @@ class LogUtils:
         :param message: 日志内容
         """
         self.logger.debug(message)
-
-    @staticmethod
-    def set_log_format(plugin_name):
-        format_str = f"[%(asctime)s] [%(levelname)s] [{plugin_name}] %(message)s"
-        formatter = logging.Formatter(format_str)
-        handler = logging.StreamHandler()
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)

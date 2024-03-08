@@ -2,7 +2,7 @@
 
 import nonebot
 from nonebot.adapters.onebot.v11 import Adapter as ONEBOT_V11Adapter
-from utils.db import check_db_connection
+from utils.db import create_database_and_structure_if_not_exists
 
 # Custom your logger
 #
@@ -24,9 +24,10 @@ driver.register_adapter(ONEBOT_V11Adapter)
 
 # Please DO NOT modify this file unless you know what you are doing!
 # As an alternative, you should use command `nb` or modify `pyproject.toml` to load plugins
+# create_database_and_structure_if_not_exists("db_otaebot", "./db_otaebot.sql")
 nonebot.load_from_toml("pyproject.toml")
 nonebot.load_builtin_plugins("echo")
-check_db_connection()
+
 
 
 if __name__ == "__main__":

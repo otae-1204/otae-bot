@@ -1,10 +1,16 @@
 import requests
 from configs.path_config import IMAGE_PATH
-import pymysql
-from plugins.EFTHelper.object import Ammo
+from plugins.EFTHelper.object import Ammo, dbAmmo
 import os
 from utils.user_agent import get_user_agent
 from configs.config import SYSTEM_PROXY, password, user, address
+from utils.db import Database
+from utils.logs import LogUtils
+
+from sqlalchemy import and_, or_
+import httpx
+
+log = LogUtils("EFTHelper")
 
 path = IMAGE_PATH + 'EFTHelper/'
 
@@ -84,12 +90,13 @@ caliber_mapping = {
     'Caliber762x35': ".300 AAC Blackout",
     'Caliber86x70': ".338 Lapua Magnum",
     'Caliber9x33R': ".357 Magnum",
-    'Caliber26x75': "26x75mm"
+    'Caliber26x75': "26x75mm",
+    'Caliber68x51': "6.8x51mm"
 }
 
 
 # 通过任务编号查询任务名
-def query_task_name(taskId):
+async def query_task_name(taskId):
     """
     说明:
         通过任务编号查询任务名
@@ -100,18 +107,19 @@ def query_task_name(taskId):
     """
     query_task = '{task(id:"' + taskId + '",lang:zh){name}}'
     headers = {"Content-Type": "application/json"}
-    response = requests.post('https://api.tarkov.dev/graphql', json={
-        'query': query_task}, headers=headers, timeout=30, proxies={"http" : SYSTEM_PROXY})
-    if response.status_code == 200:
-        result = response.json()
-    else:
-        print(f"请求失败,错误代码{response.status_code}")
-        return -1
-    print(result)
-    return result["data"]["task"]["name"]
+    async with httpx.AsyncClient(proxies={SYSTEM_PROXY["https"]:httpx.Proxy(url=SYSTEM_PROXY["https"])})as client:
+        response = await client.post('https://api.tarkov.dev/graphql', json={'query': query_task}, headers=headers, timeout=30)
+        if response.status_code == 200:
+            result = response.json()
+            log.info(f"查询任务“{result['data']['task']['name']}”成功")
+        else:
+            # print(f"请求失败,错误代码{response.status_code}")
+            log.error(f"请求失败,错误代码{response.status_code}")
+            return -1
+        return result["data"]["task"]["name"]
 
 
-def clean_name(name_str: str) -> str:
+async def clean_name(name_str: str) -> str:
     """
     说明:
         清理和格式化名称字符串.
@@ -160,12 +168,10 @@ def clean_name(name_str: str) -> str:
         ammo_Name = " ".join(name_list[2:])
     else:
         ammo_Name = " ".join(name_list[1:])
-    # print("=-=-="*20)
-    # print(ammo_Name)
     return ammo_Name
 
 
-def process_ammo_data(db, ammo_data) -> int:
+async def process_ammo_data(db: Database, ammo_data) -> int:
     """
     说明:       
         处理子弹数据
@@ -179,8 +185,7 @@ def process_ammo_data(db, ammo_data) -> int:
         for i in ammo_data["data"]["ammo"]:
             caliberStr = i["caliber"]
             caliber = caliber_mapping[caliberStr] if caliberStr in caliber_mapping else caliberStr
-            name = clean_name(i["item"]["name"])
-            print(name)
+            name = await clean_name(i["item"]["name"])
             new_ammo = Ammo(
                 id=None,
                 name=name,
@@ -207,463 +212,292 @@ def process_ammo_data(db, ammo_data) -> int:
                 staminaBurnPerDamage=round(i["staminaBurnPerDamage"], 3)
             )
 
-            ammo_id = db.selectAmmo(new_ammo)
+            ammo_id = await A_selectAmmoInDB(new_ammo)
             if ammo_id > 0:
-                db.updateAmmo(ammo_id, new_ammo)
+                await db.update_entity_async(
+                    dbAmmo,dbAmmo.id == ammo_id,
+                    name=new_ammo.name,
+                    caliber=new_ammo.caliber,
+                    weight=new_ammo.weight,
+                    stackMaxSize=new_ammo.stackMaxSize,
+                    tracer=new_ammo.tracer,
+                    tracerColor=new_ammo.tracerColor,
+                    damage=new_ammo.damage,
+                    armorDamage=new_ammo.armorDamage,
+                    fragmentationChance=new_ammo.fragmentationChance,
+                    ricochetChance=new_ammo.ricochetChance,
+                    penetrationPower=new_ammo.penetrationPower,
+                    accuracyModifier=new_ammo.accuracyModifier,
+                    recoilModifier=new_ammo.recoilModifier,
+                    lightBleedModifier=new_ammo.lightBleedModifier,
+                    heavyBleedModifier=new_ammo.heavyBleedModifier,
+                    img=new_ammo.img,
+                    marketSale=new_ammo.marketSale,
+                    apiID=new_ammo.apiID,
+                    projectileCount=new_ammo.projectileCount,
+                    initialSpeed=new_ammo.initialSpeed,
+                    staminaBurnPerDamage=new_ammo.staminaBurnPerDamage
+                )
                 # 删除旧图片
                 image_path = os.path.join(path, "bullet", caliber.replace("毫米", "mm").replace(
                     "/", "_").replace('"', "") + " " + name.rstrip().replace('"', "") + ".png")
                 if os.path.exists(image_path):
                     os.remove(image_path)
                 # 下载新图片
-                result = requests.get(
-                    i["item"]["iconLink"], timeout=30, proxies={"http" : SYSTEM_PROXY})
-                if result.status_code == 200:
-                    img_path = caliber.replace("毫米", "mm").replace(
-                        "/", "_").replace('"', "") + " " + name.rstrip().replace('"', "")
-                    with open(path + f"bullet/{img_path}.png", 'wb') as f:
-                        f.write(result.content)
-                    print(f"更新{img_path}成功")
-                else:
-                    print(f"请求失败,错误代码{result.status_code}")
-                    return -1
+                    async with httpx.AsyncClient(proxies={SYSTEM_PROXY["https"]:httpx.Proxy(url=SYSTEM_PROXY["https"])}) as client:
+                        response = await client.get(i["item"]["iconLink"], timeout=30)
+                        if response.status_code == 200:
+                            img_path = caliber.replace("毫米", "mm").replace("/", "_").replace('"', "") + " " + name.rstrip().replace('"', "")
+                            with open(path + f"bullet/{img_path}.png", 'wb') as f:
+                                f.write(response.content)
+                            log.info(f"更新{img_path}成功")
+                        else:
+                            log.error(f"请求失败,错误代码{response.status_code}")
+                            return -1
             else:
-                db.insertAmmo(new_ammo)
+                await db.add_entity_async(dbAmmo,
+                id=None,
+                name=new_ammo.name,
+                caliber=new_ammo.caliber,
+                weight=new_ammo.weight,
+                stackMaxSize=new_ammo.stackMaxSize,
+                tracer=new_ammo.tracer,
+                tracerColor=new_ammo.tracerColor,
+                damage=new_ammo.damage,
+                armorDamage=new_ammo.armorDamage,
+                fragmentationChance=new_ammo.fragmentationChance,
+                ricochetChance=new_ammo.ricochetChance,
+                penetrationPower=new_ammo.penetrationPower,
+                accuracyModifier=new_ammo.accuracyModifier,
+                recoilModifier=new_ammo.recoilModifier,
+                lightBleedModifier=new_ammo.lightBleedModifier,
+                heavyBleedModifier=new_ammo.heavyBleedModifier,
+                img=new_ammo.img,
+                marketSale=new_ammo.marketSale,
+                apiID=new_ammo.apiID,
+                projectileCount=new_ammo.projectileCount,
+                initialSpeed=new_ammo.initialSpeed,
+                staminaBurnPerDamage=new_ammo.staminaBurnPerDamage
+                )
                 # 下载新图片
-                result = requests.get(
-                    i["item"]["iconLink"], timeout=30, proxies={"http" : SYSTEM_PROXY})
-                if result.status_code == 200:
-                    img_path = caliber.replace("毫米", "mm").replace(
-                        "/", "_").replace('"', "") + " " + name.rstrip().replace('"', "")
-                    with open(path + f"bullet/{img_path}.png", 'wb') as f:
-                        f.write(result.content)
-                    print(f"下载{img_path}成功")
-                else:
-                    print(f"请求失败,错误代码{result.status_code}")
-                    return -1
-
+                async with httpx.AsyncClient(proxies={SYSTEM_PROXY["https"]:httpx.Proxy(url=SYSTEM_PROXY["https"])}) as client:
+                    response = await client.get(i["item"]["iconLink"], timeout=30)
+                    if response.status_code == 200:
+                        img_path = caliber.replace("毫米", "mm").replace("/", "_").replace('"', "") + " " + name.rstrip().replace('"', "")
+                        with open(path + f"bullet/{image_path}.png", 'wb') as f:
+                            f.write(response.content)
+                        log.info(f"更新{image_path}成功")
+                    else:
+                        log.error(f"请求失败,错误代码{response.status_code}")
+                        return -1
         return 1
     except Exception as e:
-        print("处理子弹数据时出现错误:\n")
-        print(e)
-        
+        log.error("处理子弹数据时出现错误:\n" + str(e))
         return -1
 
 
-def updateAmmoData() -> int:
-    # try:
-    db = DatabaseDao()
+async def updateAmmoData() -> int:
+    db = Database()
     headers = {"Content-Type": "application/json"}
-    response = requests.post('https://api.tarkov.dev/graphql', json={
-        'query': query_cn}, headers=headers, timeout=30, proxies={"http" : SYSTEM_PROXY})
-    if response.status_code == 200:
-        cnData = response.json()
-    else:
-        print("查询无法运行，返回的代码为 {}. {}".format(
-            response.status_code, query_cn))
-
-    return process_ammo_data(db, cnData)
-    # except Exception as e:
-    #     print("更新子弹数据时出现错误:\n")
-    #     print(e.args)
-    #     return -1
+    async with httpx.AsyncClient(proxies={SYSTEM_PROXY["https"]:httpx.Proxy(url=SYSTEM_PROXY["https"])}) as client:
+        response = await client.post('https://api.tarkov.dev/graphql', json={'query': query_cn}, headers=headers, timeout=30)
+        if response.status_code == 200:
+            cnData = response.json()
+            log.info("子弹更新请求成功")
+        else:
+            log.error(f"请求失败,错误代码{response.status_code}")
+    return await process_ammo_data(db, cnData)
 
 
-# 数据库操作类
+async def A_insertAmmo(ammo: Ammo) -> int:
+    """
+    说明:
+        插入一条数据
+    参数:
+        ammo : [Ammo] 子弹对象
+    返回:
+        1 = 成功, -1 = 失败
+    """
+    try:
+        db = Database()
+        db.add_entity_async(dbAmmo,
+                        name=ammo.name,
+                        caliber=ammo.caliber,
+                        weight=ammo.weight,
+                        stackMaxSize=ammo.stackMaxSize,
+                        tracer=ammo.tracer,
+                        tracerColor=ammo.tracerColor,
+                        damage=ammo.damage,
+                        armorDamage=ammo.armorDamage,
+                        fragmentationChance=ammo.fragmentationChance,
+                        ricochetChance=ammo.ricochetChance,
+                        penetrationPower=ammo.penetrationPower,
+                        accuracyModifier=ammo.accuracyModifier,
+                        recoilModifier=ammo.recoilModifier,
+                        lightBleedModifier=ammo.lightBleedModifier,
+                        heavyBleedModifier=ammo.heavyBleedModifier,
+                        img=ammo.img,
+                        marketSale=ammo.marketSale,
+                        apiID=ammo.apiID,
+                        projectileCount=ammo.projectileCount,
+                        initialSpeed=ammo.initialSpeed,
+                        staminaBurnPerDamage=ammo.staminaBurnPerDamage
+                        )
+    except Exception as e:
+        log.error("错误方法: A_insertAmmo" + "错误原因:" + str(e))
+        return -1
 
 
-class DatabaseDao:
-    conn = None
-    cursor = None
+async def A_selectAmmoInDB(ammo: Ammo) -> int:
+    """
+    说明:
+        查询子弹是否存在
+    参数:
+        ammo : [Ammo] 子弹对象
+    返回:
+        id / -1
+    """
+    try:
+        db = Database()
+        result = await db.get_entities_async(dbAmmo, and_(name=ammo.name))
+        if result is None:
+            return -1
+        else:
+            return result.id
+    except Exception as e:
+        log.error("错误方法: A_selectAmmoInDB\n" + "错误原因:" + str(e))
+        return -1
 
-    @staticmethod
-    def get_Connect():
-        """
-        说明:
-            打开链接
-        """
-        try:
-            conn = pymysql.connect(
-                host="localhost", user=user, password=password, database="tkf_bullet_data")
-        except Exception as e:
-            print(e)
-        return conn
 
-    def closeAll(self):
-        """
-        说明:
-            关闭所有对象
-        """
-        if self.cursor is not None:
-            self.cursor.close()
-        if self.conn is not None:
-            self.conn.close()
-
-    def insertAmmo(self, ammo: Ammo):
-        """
-        说明:
-            插入一条数据
-        """
-        try:
-            self.conn = self.get_Connect()
-            self.cursor = self.conn.cursor()
-            sql = "insert into bulletdata(name,caliber,weight,stackMaxSize,tracer,tracerColor,damage,armorDamage," \
-                  "fragmentationChance,ricochetChance,penetrationPower,accuracyModifier,recoilModifier," \
-                  "lightBleedModifier,heavyBleedModifier,img,marketSale) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s," \
-                  "%s,%s,%s,%s,%s) "
-            self.cursor.execute(sql, (ammo.name, ammo.caliber, ammo.weight, ammo.stackMaxSize, ammo.tracer,
-                                      ammo.tracerColor, ammo.damage, ammo.armorDamage, ammo.fragmentationChance,
-                                      ammo.ricochetChance, ammo.penetrationPower, ammo.accuracyModifier,
-                                      ammo.recoilModifier, ammo.lightBleedModifier, ammo.heavyBleedModifier, ammo.img,
-                                      ammo.marketSale))
-            self.conn.commit()
-        except Exception as e:
-            print("插入数据时出现错误:\n")
-            print(e)
-        finally:
-            self.closeAll()
-
-    def selectAmmo(self, ammo: Ammo) -> int:
-        """
-        说明:
-            查询子弹是否存在
-        返回:
-            id / -1
-        """
-        try:
-            self.conn = self.get_Connect()
-            self.cursor = self.conn.cursor()
-            sql = "select id from bulletdata where name = %s and caliber = %s"
-            self.cursor.execute(sql, (ammo.name, ammo.caliber))
-            result = self.cursor.fetchone()
-            if result is None:
-                return -1
-            else:
-                return result[0]
-        except Exception as e:
-            print("查询数据时出现错误:\n")
-            print(e)
-        finally:
-            self.closeAll()
-
-    def updateAmmo(self, ammoId: int, ammo: Ammo):
-        """
-        说明:
-            更新数据
-        """
-        try:
-            self.conn = self.get_Connect()
-            self.cursor = self.conn.cursor()
-            sql = "update bulletdata set name = %s, caliber = %s, weight = %s, stackMaxSize = %s, tracer = %s, " \
-                  "tracerColor = %s, damage = %s, armorDamage = %s, fragmentationChance = %s, ricochetChance = %s, " \
-                  "penetrationPower = %s, accuracyModifier = %s, recoilModifier = %s, lightBleedModifier = %s, " \
-                  "heavyBleedModifier = %s, img = %s, marketSale = %s, apiID = %s, projectileCount = %s, initialSpeed = %s, " \
-                  "staminaBurnPerDamage = %s where id = %s"
-            self.cursor.execute(sql, (ammo.name, ammo.caliber, ammo.weight, ammo.stackMaxSize, ammo.tracer,
-                                      ammo.tracerColor, ammo.damage, ammo.armorDamage, ammo.fragmentationChance,
-                                      ammo.ricochetChance, ammo.penetrationPower, ammo.accuracyModifier,
-                                      ammo.recoilModifier, ammo.lightBleedModifier, ammo.heavyBleedModifier, ammo.img,
-                                      ammo.marketSale, ammo.apiID, ammo.projectileCount, ammo.initialSpeed,
-                                      round(ammo.staminaBurnPerDamage, 3), ammoId))
-            self.conn.commit()
-        # except Exception as e:
-        #     print(e)
-        finally:
-            self.closeAll()
-
-    def deleteAmmo(self):
-        """
-        说明:
-            删除数据
-        """
-        try:
-            self.conn = self.get_Connect()
-            self.cursor = self.conn.cursor()
-            sql = "TRUNCATE TABLE bulletdata"
-            self.cursor.execute(sql)
-        except Exception as e:
-            print("删除数据时出现错误:\n")
-            print(e)
-        finally:
-            self.closeAll()
-
-    def selectAmmoByName(self, name: list) -> list:
-        """
-        说明:
-            通过名称查询子弹数据
-        返回:
-            list
-        """
-        try:
-            self.conn = self.get_Connect()
-            self.cursor = self.conn.cursor()
-            sql = "select * from bulletdata"
-            for i in range(0, len(name)):
-                name[i] = "%" + name[i] + "%"
-                sql += f' where name like "{name[i]}"' if i == 0 else f' or name like "{name[i]}"'
-            # print(sql)
-            sql += "  ORDER BY caliber,penetrationPower"
-            self.cursor.execute(sql)
-            result = self.cursor.fetchall()
-            ammoList = []
-            print(result)
-            for j in result:
-                ammo = Ammo(j[0], j[1], j[2], j[3], j[4], j[5], j[6], j[7], j[8], j[9], j[10], j[11], j[12], j[13],
-                            j[14],
-                            j[15], j[16], j[17])
-                ammoList.append(ammo)
-            print(ammoList)
-            return ammoList
-        except Exception as e:
-            print("通过名称查询数据时出现错误:\n")
-            print(e)
-            return []
-        finally:
-            self.closeAll()
-
-    def selectAmmoById(self, id: list) -> list:
-        """
-        说明:
-            通过Id查询子弹数据
-        返回:
-            Ammo
-        """
-        try:
-            self.conn = self.get_Connect()
-            self.cursor = self.conn.cursor()
-            sql = "select * from bulletdata"
-            for i in range(0, len(id)):
-                sql += f' where id = "{id[i]}"' if i == 0 else f' or id = "{id[i]}"'
-            # print(sql)
-            sql += "  ORDER BY caliber,penetrationPower"
-            self.cursor.execute(sql)
-            result = self.cursor.fetchall()
-            ammoList = []
-            for j in result:
-                ammo = Ammo(j[0], j[1], j[2], j[3], j[4], j[5], j[6], j[7], j[8], j[9], j[10], j[11], j[12], j[13],
-                            j[14],
-                            j[15], j[16], j[17])
-                ammoList.append(ammo)
-            return ammoList
-        except Exception as e:
-            print("通过ID查询数据时出现错误:\n")
-            print(e)
-            return []
-        finally:
-            self.closeAll()
-
-    def selectAmmoByCaliber(self, caliber: list) -> list:
-        """
-        说明:
-            通过口径查询子弹数据
-        返回:
-            list
-        """
-        try:
-            self.conn = self.get_Connect()
-            self.cursor = self.conn.cursor()
-            sql = "select * from bulletdata"
-            for i in range(0, len(caliber)):
-                caliber[i] = "%" + caliber[i] + "%"
-                sql += f' where caliber like "{caliber[i]}"' if i == 0 else f' or caliber like "{caliber[i]}"'
-            # print(sql)
-            sql += "  ORDER BY caliber,penetrationPower"
-            self.cursor.execute(sql)
-            result = self.cursor.fetchall()
-            ammoList = []
-            for j in result:
-                ammo = Ammo(j[0], j[1], j[2], j[3], j[4], j[5], j[6], j[7], j[8], j[9], j[10], j[11], j[12], j[13],
-                            j[14],
-                            j[15], j[16], j[17])
-                ammoList.append(ammo)
-            return ammoList
-        except Exception as e:
-            print("通过口径查询数据时出现错误:\n")
-            print(e)
-            return []
-        finally:
-            self.closeAll()
-
-    def selectAmmoByDiverse(self, conditions):
-        """
-        说明:
-            通过多条件查询子弹数据
-        参数:
-            conditions : list[list]
-            例: [["*5.56", "55A"], ["*5.45", "BT"]]
-        返回:
-            list
-        """
-        try:
-            print(conditions)
-            self.conn = self.get_Connect()
-            self.cursor = self.conn.cursor()
-            sql = "select * from bulletdata"
-            ammoList = []
-            for i in range(0, len(conditions)):
-                print("*" * 50)
-                print(conditions[i])
-                conditions[i] = conditions[i].replace("amp;", "")
-                if conditions[i][:1] in caliberStart:
-                    sqlEx = "%" + \
-                            conditions[i][1:].replace(
-                                "*", "x").replace("×", "x").replace("＊", "x") + "%"
-                    print(sqlEx)
-                    sql += f' where caliber like "{sqlEx}"' if i == 0 \
-                        else f' and caliber like "{sqlEx}" '
-                elif conditions[i][:1] in idStart:
-                    sqlEx = "%" + conditions[i][1:] + "%"
-                    sql += f' where id = "{sqlEx}"' if i == 0 \
-                        else f' and id = "{sqlEx}" '
-                elif conditions[i][:1] in damageStart:
-                    if conditions[i][1:2] in greaterThan:
-                        if conditions[i][2:3] in equal:
-                            sqlEx = conditions[i][3:]
-                            sql += f' where damage >= "{sqlEx}"' if i == 0 \
-                                else f' and damage >= "{sqlEx}" '
-                        else:
-                            sqlEx = conditions[i][2:]
-                            sql += f' where damage > "{sqlEx}"' if i == 0 \
-                                else f' and damage > "{sqlEx}" '
-                    elif conditions[i][1:2] in lessThan:
-                        if conditions[i][2:3] in equal:
-                            sqlEx = conditions[i][3:]
-                            sql += f' where damage <= "{sqlEx}"' if i == 0 \
-                                else f' and damage <= "{sqlEx}" '
-                        else:
-                            sqlEx = conditions[i][2:]
-                            sql += f' where damage < "{sqlEx}"' if i == 0 \
-                                else f' and damage < "{sqlEx}" '
-                    elif conditions[i][1:2] in equal:
-                        sqlEx = conditions[i][2:]
-                        sql += f' where damage = "{sqlEx}"' if i == 0 \
-                            else f' and damage = "{sqlEx}" '
-                elif conditions[i][:1] in penetrationStart:
-                    if conditions[i][1:2] in greaterThan:
-                        if conditions[i][2:3] in equal:
-                            sqlEx = conditions[i][3:]
-                            sql += f' where penetrationPower >= "{sqlEx}"' if i == 0 \
-                                else f' and penetrationPower >= "{sqlEx}" '
-                        else:
-                            sqlEx = conditions[i][2:]
-                            sql += f' where penetrationPower > "{sqlEx}"' if i == 0 \
-                                else f' and penetrationPower > "{sqlEx}" '
-                    elif conditions[i][1:2] in lessThan:
-                        if conditions[i][2:3] in equal:
-                            sqlEx = conditions[i][3:]
-                            sql += f' where penetrationPower <= "{sqlEx}"' if i == 0 \
-                                else f' and penetrationPower <= "{sqlEx}" '
-                        else:
-                            sqlEx = conditions[i][2:]
-                            sql += f' where penetrationPower < "{sqlEx}"' if i == 0 \
-                                else f' and penetrationPower < "{sqlEx}" '
-                    elif conditions[i][1:2] in equal:
-                        sqlEx = conditions[i][2:]
-                        sql += f' where penetrationPower = "{sqlEx}"' if i == 0 \
-                            else f' and penetrationPower = "{sqlEx}" '
+async def selectAmmoByOneCondition(condition: str) -> list:
+    """
+    说明:
+        通过单条件查询子弹数据
+    参数:
+        condition : str
+    返回:
+        list
+    """
+    try:
+        result = []
+        db = Database()
+        if condition[:1] in caliberStart:
+            sqlEx = "%" + \
+                    condition[1:].replace(
+                        "*", "x").replace("×", "x").replace("＊", "x") + "%"
+            result = await db.get_entities_async(dbAmmo, dbAmmo.caliber.like(sqlEx))
+        elif condition[:1] in idStart:
+            sqlEx = "%" + condition[1:] + "%"
+            result = await db.get_entities_async(dbAmmo, dbAmmo.id == sqlEx)
+        elif condition[:1] in damageStart:
+            if condition[1:2] in greaterThan:
+                if condition[2:3] in equal:
+                    sqlEx = condition[3:]
+                    result = await db.get_entities_async(dbAmmo, dbAmmo.damage >= sqlEx)
                 else:
-                    sqlEx = "%" + conditions[i] + "%"
-                    sql += f' where name like "{sqlEx}"' if i == 0 \
-                        else f' and name like "{sqlEx}"'
-            sql += " ORDER BY caliber,penetrationPower"
-            print(sql)
-            self.cursor.execute(sql)
-            result = self.cursor.fetchall()
-            # print(result)
-            for k in result:
-                ammo = Ammo(k[0], k[1], k[2], k[3], k[4], k[5], k[6], k[7], k[8], k[9], k[10], k[11], k[12], k[13],
-                            k[14],
-                            k[15], k[16], k[17], k[18], k[19], k[20], k[21])
-                ammoList.append(ammo)
-                # print(ammoList)
-            return ammoList
-        except Exception as e:
-            print("通过多条件查询数据时出现错误:\n")
-            print(e)
-            return []
-        finally:
-            self.closeAll()
+                    sqlEx = condition[2:]
+                    result = await db.get_entities_async(dbAmmo, dbAmmo.damage > sqlEx)
+            elif condition[1:2] in lessThan:
+                if condition[2:3] in equal:
+                    sqlEx = condition[3:]
+                    result = await db.get_entities_async(dbAmmo, dbAmmo.damage <= sqlEx)
+                else:
+                    sqlEx = condition[2:]
+                    result = await db.get_entities_async(dbAmmo, dbAmmo.damage < sqlEx)
+            elif condition[1:2] in equal:
+                sqlEx = condition[2:]
+                result = await db.get_entities_async(dbAmmo, dbAmmo.damage == sqlEx)
+        elif condition[:1] in penetrationStart:
+            if condition[1:2] in greaterThan:
+                if condition[2:3] in equal:
+                    sqlEx = condition[3:]
+                    result = await db.get_entities_async(dbAmmo, dbAmmo.penetrationPower >= sqlEx)
+                else:
+                    sqlEx = condition[2:]
+                    result = await db.get_entities_async(dbAmmo, dbAmmo.penetrationPower > sqlEx)
+            elif condition[1:2] in lessThan:
+                if condition[2:3] in equal:
+                    sqlEx = condition[3:]
+                    result = await db.get_entities_async(dbAmmo, dbAmmo.penetrationPower <= sqlEx)
+                else:
+                    sqlEx = condition[2:]
+                    result = await db.get_entities_async(dbAmmo, dbAmmo.penetrationPower < sqlEx)
+            elif condition[1:2] in equal:
+                sqlEx = condition[2:]
+                result = await db.get_entities_async(dbAmmo, dbAmmo.penetrationPower == sqlEx)
+        else:
+            sqlEx = "%" + condition + "%"
+            result = await db.get_entities_async(dbAmmo, dbAmmo.name.like(sqlEx))
+        ammoList = result
+        return ammoList
+    except Exception as e:
+        log.error("错误方法: selectAmmoByOneCondition\n" + "错误原因:" + str(e))
+        return []
 
-    def selectAmmoByOneCondition(self, condition):
-        """
-        说明:
-            通过单条件查询子弹数据
-        参数:
-            condition : str
-            例: "*5.56"
-        返回:
-            list
-        """
-        try:
 
-            self.conn = self.get_Connect()
-            self.cursor = self.conn.cursor()
-            sql = "select * from bulletdata"
-            print(condition)
-            condition = condition.replace("amp;", "")
+async def selectAmmoByDiverse(conditions: list) -> list:
+    """
+    说明:
+        通过多条件查询子弹数据
+    参数:
+        conditions : list
+    返回:
+        list
+    """
+    try:
+        result = []
+        db = Database()
+        and_list = []
+        for condition in conditions:
             if condition[:1] in caliberStart:
                 sqlEx = "%" + \
                         condition[1:].replace(
                             "*", "x").replace("×", "x").replace("＊", "x") + "%"
-                sql += f' where caliber like "{sqlEx}"'
+                and_list.append(dbAmmo.caliber.like(sqlEx))
             elif condition[:1] in idStart:
-                sqlEx = condition[1:]
-                sql += f' where id = "{sqlEx}"'
+                sqlEx = "%" + condition[1:] + "%"
+                and_list.append(dbAmmo.id == sqlEx)
             elif condition[:1] in damageStart:
                 if condition[1:2] in greaterThan:
                     if condition[2:3] in equal:
                         sqlEx = condition[3:]
-                        sql += f' where damage >= "{sqlEx}"'
+                        and_list.append(dbAmmo.damage >= sqlEx)
                     else:
                         sqlEx = condition[2:]
-                        sql += f' where damage > "{sqlEx}"'
+                        and_list.append(dbAmmo.damage > sqlEx)
                 elif condition[1:2] in lessThan:
                     if condition[2:3] in equal:
                         sqlEx = condition[3:]
-                        sql += f' where damage <= "{sqlEx}"'
+                        and_list.append(dbAmmo.damage <= sqlEx)
                     else:
                         sqlEx = condition[2:]
-                        sql += f' where damage < "{sqlEx}"'
+                        and_list.append(dbAmmo.damage < sqlEx)
                 elif condition[1:2] in equal:
                     sqlEx = condition[2:]
-                    sql += f' where damage = "{sqlEx}"'
-            elif condition[:1] in ["&", ]:
+                    and_list.append(dbAmmo.damage == sqlEx)
+            elif condition[:1] in penetrationStart:
                 if condition[1:2] in greaterThan:
                     if condition[2:3] in equal:
                         sqlEx = condition[3:]
-                        sql += f' where penetrationPower >= "{sqlEx}"'
+                        and_list.append(dbAmmo.penetrationPower >= sqlEx)
                     else:
                         sqlEx = condition[2:]
-                        sql += f' where penetrationPower > "{sqlEx}"'
+                        and_list.append(dbAmmo.penetrationPower > sqlEx)
                 elif condition[1:2] in lessThan:
                     if condition[2:3] in equal:
                         sqlEx = condition[3:]
-                        sql += f' where penetrationPower <= "{sqlEx}"'
+                        and_list.append(dbAmmo.penetrationPower <= sqlEx)
                     else:
                         sqlEx = condition[2:]
-                        sql += f' where penetrationPower < "{sqlEx}"'
+                        and_list.append(dbAmmo.penetrationPower < sqlEx)
                 elif condition[1:2] in equal:
                     sqlEx = condition[2:]
-                    sql += f' where penetrationPower = "{sqlEx}"'
+                    and_list.append(dbAmmo.penetrationPower == sqlEx)
             else:
                 sqlEx = "%" + condition + "%"
-                sql += f' where name like "{sqlEx}"'
-            sql += " ORDER BY caliber,penetrationPower"
-            print(sql)
-            self.cursor.execute(sql)
-            result = self.cursor.fetchall()
-            ammoList = []
-            for i in result:
-                ammo = Ammo(i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8], i[9], i[10], i[11], i[12], i[13],
-                            i[14],
-                            i[15], i[16], i[17], i[18], i[19], i[20], i[21])
-                ammoList.append(ammo)
-            return ammoList
-        except Exception as e:
-            print("通过单条件查询数据时出现错误:\n")
-            print(e)
-            return []
-        finally:
-            self.closeAll()
-
-# updateAmmoData()
+                and_list.append(dbAmmo.name.like(sqlEx))
+        result = await db.get_entities_async(dbAmmo, and_(*and_list))
+        return result
+    except Exception as e:
+        log.error("错误方法: selectAmmoByDiverse\n" + "错误原因:" + str(e))
+        return []
