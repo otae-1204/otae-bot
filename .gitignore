@@ -6,3 +6,4 @@ __pycache__/
 .idea/
 Test/
 .vscode/
+plugins/steamInfo/config.py
