@@ -6,6 +6,8 @@ from utils.user_agent import get_user_agent
 from configs.config import SYSTEM_PROXY, password, user, address
 from utils.db import Database
 from utils.logs import LogUtils
+import traceback
+
 
 from sqlalchemy import and_, or_
 import httpx
@@ -181,6 +183,7 @@ async def process_ammo_data(db: Database, ammo_data) -> int:
     返回:
         int
     """
+    img_path = ""
     try:
         for i in ammo_data["data"]["ammo"]:
             caliberStr = i["caliber"]
@@ -243,17 +246,20 @@ async def process_ammo_data(db: Database, ammo_data) -> int:
                     "/", "_").replace('"', "") + " " + name.rstrip().replace('"', "") + ".png")
                 if os.path.exists(image_path):
                     os.remove(image_path)
+                    log.info(f"删除{image_path}成功")
+                else:
+                    log.warning(f"文件 {image_path} 不存在")
                 # 下载新图片
-                    async with httpx.AsyncClient(proxies={SYSTEM_PROXY["https"]:httpx.Proxy(url=SYSTEM_PROXY["https"])}) as client:
-                        response = await client.get(i["item"]["iconLink"], timeout=30)
-                        if response.status_code == 200:
-                            img_path = caliber.replace("毫米", "mm").replace("/", "_").replace('"', "") + " " + name.rstrip().replace('"', "")
-                            with open(path + f"bullet/{img_path}.png", 'wb') as f:
-                                f.write(response.content)
-                            log.info(f"更新{img_path}成功")
-                        else:
-                            log.error(f"请求失败,错误代码{response.status_code}")
-                            return -1
+                async with httpx.AsyncClient(proxies={SYSTEM_PROXY["https"]:httpx.Proxy(url=SYSTEM_PROXY["https"])}) as client:
+                    response = await client.get(i["item"]["iconLink"], timeout=30)
+                    if response.status_code == 200:
+                        img_path = caliber.replace("毫米", "mm").replace("/", "_").replace('"', "") + " " + name.rstrip().replace('"', "")
+                        with open(f"{path}/bullet/{img_path}.png", 'wb') as f:
+                            f.write(response.content)
+                        log.info(f"下载{img_path}成功")
+                    else:
+                        log.error(f"请求失败,错误代码{response.status_code}")
+                        return -1
             else:
                 await db.add_entity_async(dbAmmo,
                 id=None,
@@ -284,15 +290,16 @@ async def process_ammo_data(db: Database, ammo_data) -> int:
                     response = await client.get(i["item"]["iconLink"], timeout=30)
                     if response.status_code == 200:
                         img_path = caliber.replace("毫米", "mm").replace("/", "_").replace('"', "") + " " + name.rstrip().replace('"', "")
-                        with open(path + f"bullet/{image_path}.png", 'wb') as f:
+                        with open(f"{path}/bullet/{img_path}.png", 'wb') as f:
                             f.write(response.content)
-                        log.info(f"更新{image_path}成功")
+                        log.info(f"下载{image_path}成功")
                     else:
                         log.error(f"请求失败,错误代码{response.status_code}")
                         return -1
         return 1
     except Exception as e:
         log.error("处理子弹数据时出现错误:\n" + str(e))
+        log.error(f"{traceback.print_exc()}")
         return -1
 
 
@@ -359,11 +366,11 @@ async def A_selectAmmoInDB(ammo: Ammo) -> int:
     """
     try:
         db = Database()
-        result = await db.get_entities_async(dbAmmo, and_(name=ammo.name))
-        if result is None:
+        result = await db.get_entities_async(dbAmmo, and_(dbAmmo.name==ammo.name))
+        if result is None or len(result) == 0:
             return -1
         else:
-            return result.id
+            return result[0].id
     except Exception as e:
         log.error("错误方法: A_selectAmmoInDB\n" + "错误原因:" + str(e))
         return -1

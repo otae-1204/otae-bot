@@ -5,6 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, INT, VARCHAR, Sequence, FLOAT
 from configs.config import bind,bind_a
 from sqlalchemy import text
+from sqlalchemy import update
 
 Base = declarative_base()
 
@@ -85,7 +86,8 @@ class Database:
         :param kwargs: 更新的属性
         """
         async with self.Session_async() as session:
-            await session.run_sync(lambda: session.query(entity_type).filter(filter_condition).update(kwargs))
+            update_stmt = update(entity_type).where(filter_condition).values(**kwargs)
+            await session.execute(update_stmt)
             await session.commit()
 
     def delete_entity(self, entity_type, filter_condition):

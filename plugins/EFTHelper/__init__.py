@@ -273,7 +273,7 @@ async def hand(event: Event):
                 fleaMarketPrice
             )
             # 绘制图片
-            imgResult = build_ammo_info(data[0], ammoMoreInfo, qqid)
+            imgResult = await build_ammo_info(data[0], ammoMoreInfo, qqid)
     else:
         imgResult = build_ammo_image(data, qqid)
 

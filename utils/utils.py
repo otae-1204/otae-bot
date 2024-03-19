@@ -11,7 +11,7 @@ import nonebot
 import pytz
 import pypinyin
 import time
-import io
+import os
 
 try:
     import ujson as json
@@ -154,6 +154,10 @@ def saveJson(json_filename:str,data:dict):
 
 
 def openJson(json_filename:str):
+    if not os.path.exists(json_filename):
+        with open(json_filename, 'w') as f:
+            f.write("{}")
+            f.close()
     with open(json_filename) as f:
         a = f.read()
         print(a)

@@ -179,7 +179,7 @@ def build_ammo_image(ammo, qqId) -> int:
 
 
 # 子弹详细信息图片绘制
-def build_ammo_info(ammoInfo, ammoMoreInfo: AmmoMoreInfo, qqId) -> int:
+async def build_ammo_info(ammoInfo, ammoMoreInfo: AmmoMoreInfo, qqId) -> int:
     if ammoInfo is not None:
         # 获取画布宽度 30 + 30 + 340
         bgw = 3930
@@ -398,7 +398,7 @@ def build_ammo_info(ammoInfo, ammoMoreInfo: AmmoMoreInfo, qqId) -> int:
                 # print(ammoMoreInfo.buyFor[i].requirements[j]["stringValue"])
                 if ammoMoreInfo.buyFor[i].requirements[j]["stringValue"] is not None:
                     try:
-                        data = query_task_name(ammoMoreInfo.buyFor[i].requirements[j]["stringValue"])
+                        data = await query_task_name(ammoMoreInfo.buyFor[i].requirements[j]["stringValue"])
                     except Exception as e:
                         taskRequirements = "ERROR:网络错误"
                         continue
