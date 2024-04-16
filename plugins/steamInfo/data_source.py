@@ -11,7 +11,7 @@ from .models import PlayerSummariesResponse
 
 class BindData:
     def __init__(self, save_path: str) -> None:
-        self.content: Dict[str, List[Dict[str, str]]] = {}
+        self.content: Dict[str, Dict] = {}
         self._save_path = save_path
 
         if Path(save_path).exists():
@@ -25,32 +25,72 @@ class BindData:
         with open(self._save_path, "w", encoding="utf-8") as f:
             json.dump(self.content, f, indent=4)
 
-    def add(self, parent_id: str, content: Dict[str, str]) -> None:
-        if parent_id not in self.content:
-            self.content[parent_id] = [content]
-        else:
-            self.content[parent_id].append(content)
+    def add(self, user_id:str, content:Dict[Dict,Dict]) -> None:
+        print(content)
+        # 存储格式：{user_id: {steam_id: "xxxx", bindGroups: [{group_id: "xxxx", nickname: "xxxx"}]}}
+        
+        self.content[user_id] = content
+        # if parent_id not in self.content:
+        #     self.content[parent_id] = [content]
+        # else:
+        #     self.content[parent_id].append(content)
+        
 
     def update(self, parent_id: str, content: Dict[str, str]) -> None:
         self.content[parent_id] = content
 
     def get(self, parent_id: str, user_id: str) -> Optional[Dict[str, str]]:
-        if parent_id not in self.content:
+        if user_id not in self.content:
             return None
-        for data in self.content[parent_id]:
-            if data["user_id"] == user_id:
-                return data
-        return None
+        if parent_id not in self.content[user_id]["bindGroups"]:
+            return None
+        # return {"user_id": user_id, "steam_id": self.conten   t[user_id]["steam_id"]}
+        return self.content[user_id]
+        
+        
+        # if parent_id not in self.content:
+        #     return None
+        # for data in self.content[parent_id]:
+        #     if data["user_id"] == user_id:
+        #         return data
+        # return None
 
     def get_all(self, parent_id: str) -> List[str]:
-        if parent_id not in self.content:
-            return []
-        return [data["steam_id"] for data in self.content[parent_id]]
+        returnList = []
+        # print(type(self.content))
+        for j in self.content:
+            # print(type(self.content[j]["bindGroups"]))
+            # print("=-="*20)
+            # print(self.content[j]["bindGroups"])
+            for k in list(self.content[j]["bindGroups"]):
+                # print("=-="*20)
+                # print(type(k["group_id"]))
+                # print(k["group_id"])
+                if str(k["group_id"]) == parent_id:
+                    returnList.append(self.content[j]["steam_id"])
+                    break
+        return returnList
+        # if parent_id not in self.content:
+        #     return []
+        # return [data["steam_id"] for data in self.content[parent_id]]
     
     def get_info(self, parent_id: str) -> List[str]:
-        if parent_id not in self.content:
-            return []
-        return [data for data in self.content[parent_id]]
+        returnList = []
+        for i in self.content:
+            for j in self.content[i]["bindGroups"]:
+                if str(j["group_id"]) == parent_id:
+                    returnList.append(
+                        {
+                            "steam_id": self.content[i]["steam_id"],
+                            "user_id": i,
+                            "nickname": j["nickname"],
+                        }
+                    )
+                    break
+        return returnList
+        # if parent_id not in self.content:
+        #     return []
+        # return [data for data in self.content[parent_id]]
 
 
 class SteamInfoData:
@@ -68,7 +108,7 @@ class SteamInfoData:
     def save(self) -> None:
         with open(self._save_path, "w", encoding="utf-8") as f:
             json.dump(self.content, f, indent=4)
-
+    
     def update(self, parent_id: str, content: PlayerSummariesResponse) -> None:
         self.content[parent_id] = content
 
@@ -80,13 +120,14 @@ class SteamInfoData:
     ) -> List[str]:
         old_content = self.get(parent_id)
 
+
         if old_content is None:
             self.update(parent_id, new_content)
             self.save()
             return []
 
         result = []
-
+        
         for player in new_content["players"]:
             for old_player in old_content["players"]:
                 if player["steamid"] == old_player["steamid"]:
@@ -169,3 +210,6 @@ class ParentData:
             return Image.open(f"{imgpath}unknown_avatar.jpg"), parent_id
         avatar_path = self._save_path / f"{parent_id}.png"
         return Image.open(avatar_path), self.content[parent_id]
+    
+    def getAll(self):
+        return self.content.keys()
