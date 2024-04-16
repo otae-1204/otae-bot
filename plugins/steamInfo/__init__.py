@@ -10,6 +10,7 @@ from nonebot.adapters.onebot.v11.event import GroupMessageEvent
 from nonebot.adapters.onebot.v11.message import MessageSegment, Message
 from nonebot.permission import SUPERUSER
 import re
+from utils.logs import LogUtils
 require("nonebot_plugin_apscheduler")
 
 from nonebot_plugin_apscheduler import scheduler
@@ -20,7 +21,7 @@ from .data_source import BindData, SteamInfoData, ParentData
 from .steam import get_steam_id, get_steam_users_info, STEAM_ID_OFFSET
 from .draw import draw_friends_status, simplize_steam_player_data, image_to_bytes
 
-
+# logs = LogUtils("steamInfo")
 bind = on_command("steambind", aliases={"绑定steam"}, priority=10)
 info = on_command("steaminfo", aliases={"steam信息"}, priority=10)
 check = on_command("steamcheck", aliases={"查看steam", "查steam","看看steam"}, priority=10)
@@ -48,6 +49,7 @@ async def broadcast_steam_info(parent_id: str, steam_info: PlayerSummaries):
 
     msg = steam_info_data.compare(parent_id, steam_info["response"])
 
+    print(msg)
     if msg == []:
         return None
 
@@ -55,30 +57,33 @@ async def broadcast_steam_info(parent_id: str, steam_info: PlayerSummaries):
     #     await simplize_steam_player_data(player, config.proxy)
     #     for player in steam_info["response"]["players"]
     # ]
-    steam_status_data = []
-    user_SteamList = bind_data.get_info(parent_id)
-    for player in steam_info["response"]["players"]:
-        nickname = None
-        for i in user_SteamList:
-            # print(i)
-            if i["steam_id"] == player["steamid"]:
-                if "nickname" in i.keys():
-                    nickname = i["nickname"]
-                    break
-                else:
-                    nickname = None
-                    break
-        player_data = await simplize_steam_player_data(player, config.proxy, nickname)
-        steam_status_data.append(player_data)
+    # steam_status_data = []
+    # user_SteamList = bind_data.get_info(parent_id)
+    # for player in steam_info["response"]["players"]:
+    #     nickname = None
+    #     for i in user_SteamList:
+    #         # print(i)
+    #         if i["steam_id"] == player["steamid"]:
+    #             if "nickname" in i.keys():
+    #                 nickname = i["nickname"]
+    #                 break
+    #             else:
+    #                 nickname = None
+    #                 break
+    #     player_data = await simplize_steam_player_data(player, config.proxy, nickname)
+    #     steam_status_data.append(player_data)
     
     
-    parent_avatar, parent_name = parent_data.get(parent_id)
+    # parent_avatar, parent_name = parent_data.get(parent_id)
 
-    image = draw_friends_status(parent_avatar, parent_name, steam_status_data)
+    # image = draw_friends_status(parent_avatar, parent_name, steam_status_data)
 
     # await bot.send_group_msg(
     #     group_id=parent_id, message=Message("\n".join(msg) + MessageSegment.image(image_to_bytes(image)))
     # )
+    # logs.info(f"群号: {parent_id} 的更新信息为: \n{msg}")
+    print(f"=-=-=-=-=-=-=-=-=-=-=-\n群号: {parent_id} 的更新信息为: \n{msg}")
+    
     await bot.send_group_msg(
         group_id=parent_id, message=Message("\n".join(msg))
     )
@@ -101,17 +106,38 @@ async def init_steam_info():
     "interval", minutes=config.steam_request_interval / 60, id="update_steam_info"
 )
 async def update_steam_info():
-    for parent_id in bind_data.content:
-        steam_ids = bind_data.get_all(parent_id)
-
+    # for user_id in bind_data.content.keys():
+    for group_id in parent_data.getAll():
+        # print(group_id)
+        # print(bind_data.get_all(group_id))
+        steam_ids = bind_data.get_all(group_id)
+        # print(steam_ids)
+        # logs.info(f"开始请求群号: {group_id} 的玩家信息")
+        print(f"开始请求群号: {group_id} 的玩家信息")
         steam_info = await get_steam_users_info(
             steam_ids, config.steam_api_key, config.proxy
         )
+        print(f"群号: {group_id} 的玩家信息为: {steam_info}")
+        await broadcast_steam_info(group_id, steam_info)
 
-        await broadcast_steam_info(parent_id, steam_info)
-
-        steam_info_data.update(parent_id, steam_info["response"])
+        steam_info_data.update(group_id, steam_info["response"])
         steam_info_data.save()
+    
+    # for parent_id in bind_data.content:
+    #     steam_ids = bind_data.get_all(str(parent_id))
+    #     print("=-=-=-=-=-=-=-=-=-=-=-")
+    #     print(f"群号: {parent_id} 的玩家信息为: {steam_ids}")
+
+    #     # logs.info(f"开始请求群号: {parent_id} 的玩家信息")
+    #     print(f"开始请求群号: {parent_id} 的玩家信息")
+    #     steam_info = await get_steam_users_info(
+    #         steam_ids, config.steam_api_key, config.proxy
+    #     )
+    #     print(f"群号: {parent_id} 的玩家信息为: {steam_info}")
+    #     await broadcast_steam_info(parent_id, steam_info)
+
+    #     steam_info_data.update(parent_id, steam_info["response"])
+    #     steam_info_data.save()
 
 
 @bind.handle()
@@ -122,7 +148,7 @@ async def bind_handle(event: GroupMessageEvent, cmd_arg: Message = CommandArg())
 
     if not arg.isdigit():
         await bind.finish(
-            "请输入正确的 Steam ID 或 Steam好友代码，格式: steambind [Steam ID 或 Steam好友代码]"
+            "请输入正确的 Steam ID 或 Steam好友代码，格式: /steambind [Steam ID 或 Steam好友代码]"
         )
 
     steam_id = get_steam_id(arg)
@@ -131,12 +157,33 @@ async def bind_handle(event: GroupMessageEvent, cmd_arg: Message = CommandArg())
         await bind.finish("该 Steam ID 已绑定")
 
     if user_data := bind_data.get(parent_id, event.get_user_id()):
-        user_data["steam_id"] = steam_id
-        bind_data.save()
+        if parent_id in user_data["group_id"]:
+            user_data["steam_id"] = steam_id
+            bind_data.save()
 
-        await bind.finish(f"已更新你的 Steam ID 为 {steam_id}")
+            await bind.finish(f"已更新你的 Steam ID 为 {steam_id}")
+        else:
+            user_data["bindGroups"].append(
+                {
+                    "group_id" : parent_id,
+                    "nickname" : ""
+                }
+            )
+            bind_data.save()
+            await bind.finish(f"已绑定你的 Steam ID 为 {steam_id}")
     else:
-        bind_data.add(parent_id, {"user_id": event.get_user_id(), "steam_id": steam_id})
+        bind_data.add(
+            event.get_user_id(),
+            {
+                "steam_id" : steam_id,
+                "bindGroups" : [
+                    {
+                        "group_id" : parent_id,
+                        "nickname" : ""
+                    }
+                ]
+            }
+        )
         bind_data.save()
 
         await bind.finish(f"已绑定你的 Steam ID 为 {steam_id}")
@@ -164,14 +211,34 @@ async def add_handle(event: GroupMessageEvent, cmd_arg: Message = CommandArg()):
         await bind.finish("该 Steam ID 已绑定")
     
     if user_data := bind_data.get(parent_id, atid[0]):
-        user_data["steam_id"] = steam_id
-        bind_data.save()
+        if parent_id in user_data["group_id"]:
+            user_data["steam_id"] = steam_id
+            bind_data.save()
 
-        await add.finish(f"已为群员 {atid[0]} 更新 Steam ID 为 {steam_id}")
+            await add.finish(f"已更新群员 {atid[0]} 的 Steam ID 为 {steam_id}")
+        else:
+            user_data["bindGroups"].append(
+                {
+                    "group_id" : parent_id,
+                    "nickname" : ""
+                }
+            )
+            bind_data.save()
+            await add.finish(f"已为群员 {atid[0]} 绑定 Steam ID 为 {steam_id}")
     else:
-        bind_data.add(parent_id, {"user_id": atid[0], "steam_id": steam_id})
+        bind_data.add(
+            atid[0],
+            {
+                "steam_id" : steam_id,
+                "bindGroups" : [
+                    {
+                        "group_id" : parent_id,
+                        "nickname" : ""
+                    }
+                ]
+            }
+        )
         bind_data.save()
-
         await add.finish(f"已为群员 {atid[0]} 绑定 Steam ID 为 {steam_id}")
 
 @info.handle()
@@ -187,7 +254,7 @@ async def info_handle(event: GroupMessageEvent):
         )
     else:
         await info.finish(
-            "未绑定 Steam ID, 请使用 “steambind [Steam ID 或 Steam好友代码]” 绑定 Steam ID"
+            "未绑定 Steam ID, 请使用 “/steambind [Steam ID 或 Steam好友代码]” 绑定 Steam ID"
         )
 
 @check.handle()
@@ -204,7 +271,6 @@ async def check_handle(event: GroupMessageEvent, arg: Message = CommandArg()):
         steam_ids, config.steam_api_key, config.proxy
     )
 
-    print
     logger.debug(f"{parent_id} Players info: {steam_info}")
 
     parent_avatar, parent_name = parent_data.get(parent_id)
@@ -224,7 +290,7 @@ async def check_handle(event: GroupMessageEvent, arg: Message = CommandArg()):
         for i in user_SteamList:
             # print(i)
             if i["steam_id"] == player["steamid"]:
-                if "nickname" in i.keys():
+                if "nickname" in i.keys() and i["nickname"] != "":
                     nickname = i["nickname"]
                     break
                 else:

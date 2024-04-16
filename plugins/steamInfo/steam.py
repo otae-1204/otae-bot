@@ -37,3 +37,4 @@ async def get_steam_users_info(
                 if resp.status != 200:
                     continue
                 return await resp.json()
+    raise ValueError("所有的API都被封禁了！")
