@@ -157,7 +157,7 @@ async def bind_handle(event: GroupMessageEvent, cmd_arg: Message = CommandArg())
         await bind.finish("该 Steam ID 已绑定")
 
     if user_data := bind_data.get(parent_id, event.get_user_id()):
-        if parent_id in user_data["group_id"]:
+        if parent_id in user_data["bindGroups"]:
             user_data["steam_id"] = steam_id
             bind_data.save()
 
@@ -211,7 +211,7 @@ async def add_handle(event: GroupMessageEvent, cmd_arg: Message = CommandArg()):
         await bind.finish("该 Steam ID 已绑定")
     
     if user_data := bind_data.get(parent_id, atid[0]):
-        if parent_id in user_data["group_id"]:
+        if parent_id in user_data["bindGroups"]:
             user_data["steam_id"] = steam_id
             bind_data.save()
 
