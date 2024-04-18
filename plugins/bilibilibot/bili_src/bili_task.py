@@ -17,7 +17,7 @@ class BiliTaskManager():
         self.__up_update_check_ptr__ = 0
         self.__dynamic_update_check_ptr__ = 0
 
-        self.__update_check_len__ = 8
+        self.__update_check_len__ = 5
 
         self.__init_from_database__()
         
@@ -164,7 +164,7 @@ class BiliTaskManager():
 
         Args:
             season_id (str): season_id
-            episode (int): 最新集数
+            episode (int): 最新集数的时间
             is_finish (bool): 是否完结
 
         Returns:

@@ -7,3 +7,4 @@ __pycache__/
 Test/
 .vscode/
 plugins/steamInfo/config.py
+old/
