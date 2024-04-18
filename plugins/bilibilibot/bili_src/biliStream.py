@@ -4,6 +4,7 @@ import traceback
 import nonebot
 from nonebot.log import logger
 from nonebot.adapters.onebot.v11 import MessageSegment
+from nonebot.adapters.onebot.v11.adapter import Adapter
 from .basicFunc import *
 from .exception import *
 import asyncio
@@ -22,7 +23,6 @@ async def check_bili_live() -> None:
     @Returns  :
     -------
     """
-    logger.debug("running check_bili_live")
     liver_list = list(bili_task_manager.liver_list.values())
     
     sched_bot = nonebot.get_bot()
@@ -31,11 +31,11 @@ async def check_bili_live() -> None:
         *[bili_client.get_live_status(liver_info[0], liver_info[3]) for liver_info in liver_list],
         return_exceptions=True
     )"""
-
-    results = await asyncio.gather(
-        *[bili_client.get_live_status(liver_info["liver_uid"], liver_info["room_id"]) for liver_info in liver_list],
-        return_exceptions=True
-    )
+    async with httpx.AsyncClient(headers={"User-Agent":"Mozilla/5.0"}) as client:
+        results = await asyncio.gather(
+            *[bili_client.get_live_status(client, liver_info["liver_uid"], liver_info["room_id"]) for liver_info in liver_list],
+            return_exceptions=True
+        )
     for i in range(len(liver_list)):
         if isinstance(results[i], tuple):
             if results[i][0] and not liver_list[i]["is_live"]:
@@ -54,7 +54,12 @@ async def check_bili_live() -> None:
             elif not results[i][0] and liver_list[i]["is_live"]:
                 logger.info(f'[{__PLUGIN_NAME}]检测到主播 <{liver_list[i]["liver_name"]}> 已下播')
                 bili_task_manager.update_liver_info(liver_list[i]["liver_uid"], False)
-                #bili_database.update_info(1, 0, liver_list[i][0])
+                text_msg = '【直播动态】\n<{}>直播结束!'.format(liver_list[i]["liver_name"])
+                user_list = liver_list[i]["user_follower"]
+                await asyncio.gather(*[sched_bot.send_msg(message=text_msg, user_id=user_id) for user_id in user_list])
+                group_list = liver_list[i]["group_follower"]
+                await asyncio.gather(*[sched_bot.send_msg(message=text_msg, group_id=group_id) for group_id in group_list])
+
         elif isinstance(results[i], (BiliAPIRetCodeError, BiliStatusCodeError, BiliConnectionError)):
             exception_msg = f'[错误报告]\n检测主播 <{liver_list[i]["liver_name"]}> 开播情况时发生错误\n错误类型: {type(results[i])}\n错误信息: {results[i]}'
             logger.error(f"[{__PLUGIN_NAME}]" + exception_msg)

@@ -31,6 +31,7 @@ config = Config.parse_obj(global_config)
 __PLUGIN_NAME = "[bilibilibot]"
 
 ALL_PERMISSION = GROUP_ADMIN | GROUP_OWNER | PRIVATE_FRIEND | SUPERUSER
+ALL_USER = GROUP_ADMIN | GROUP_OWNER | PRIVATE_FRIEND | SUPERUSER | GROUP_MEMBER
 PACKAGEPATH =  dirname(abspath(__file__))
 
 follow_liver_command = on_command("关注主播", permission=ALL_PERMISSION)
@@ -55,7 +56,7 @@ async def unfollow_liver_command_handler(event: Union[PrivateMessageEvent, Group
         success_list, fail_list = await unfollow_liver_list(event.group_id, uid_list, 1)
     await unfollow_liver_command.finish(f"取关成功:\n{success_list}\n取关失败:\n{fail_list}")
 
-listFollowingCommand = on_command("查询关注", aliases={"查询成分"}, permission=ALL_PERMISSION)
+listFollowingCommand = on_command("查询关注", aliases={"查询成分"}, permission=ALL_USER)
 @listFollowingCommand.handle()
 async def listFollowingCommandHandler(event: Union[PrivateMessageEvent, GroupMessageEvent], args: Message = CommandArg()):
     await create_user(event)
@@ -350,14 +351,14 @@ async def short_url_handler(event: PrivateMessageEvent):
         logger.error(f'{__PLUGIN_NAME}【错误报告】\n解析短链接 <{short_url}> 时发生错误\n错误类型: {ex_type}\n错误值: {ex_val}\n{traceback.format_exc()}')
         await follow_by_share_short_url.finish('关注失败: 连接错误')
 
-helpCommand = on_command("bilihelp", permission=ALL_PERMISSION, aliases={'B站帮助'})
-@helpCommand.handle()
-async def sendHelpMsg(event: MessageEvent):
-    await create_user(event)
-    helpMsg = ""
-    with open(f'{PACKAGEPATH}/file/source/help.json', 'r', encoding='utf-8') as f:
-        helpMsg = json.load(f)
-    await helpCommand.finish(helpMsg)
+# helpCommand = on_command("bilihelp", permission=ALL_PERMISSION, aliases={'B站帮助'})
+# @helpCommand.handle()
+# async def sendHelpMsg(event: MessageEvent):
+#     await create_user(event)
+#     helpMsg = ""
+#     with open(f'{PACKAGEPATH}/file/source/help.json', 'r', encoding='utf-8') as f:
+#         helpMsg = json.load(f)
+#     await helpCommand.finish(helpMsg)
 
 publicBroacast = on_command("broacast", aliases={'广播'}, permission=permission.SUPERUSER)
 @publicBroacast.handle()

@@ -24,22 +24,22 @@ async def check_telegram_update():
     无
     -------
     """
-    logger.debug("running check_telegram_update")
     telegram_list = list(bili_task_manager.telegram_list.values())
     telegram_list = [i for i in telegram_list if i["is_finish"] is False]
     sched_bot = nonebot.get_bot()
     # 只对未完结的番剧进行检查
-    results = await asyncio.gather(
-        *[bili_client.get_telegram_latest_episode(telegram_info["season_id"], telegram_info["episode"]) for telegram_info in telegram_list],
-        return_exceptions=True
-    )
+    async with httpx.AsyncClient(headers={"User-Agent":"Mozilla/5.0"}) as client:
+        results = await asyncio.gather(
+            *[bili_client.get_telegram_latest_episode(client, telegram_info["season_id"], telegram_info["episode"]) for telegram_info in telegram_list],
+            return_exceptions=True
+        )
 
     for i in range(len(telegram_list)):
         if isinstance(results[i], tuple):
             if results[i][0] is True:
                 logger.info(f'[{__PLUGIN_NAME}]检测到影视剧 <{telegram_list[i]["telegram_title"]}> 更新')
-                text_msg = "【B站动态】\n《{}》已更新第{}集\n标题: {}\n链接: {}\n".format(
-                        telegram_list[i]["telegram_title"], results[i][1], results[i][2], results[i][3]
+                text_msg = "【B站动态】\n《{}》已更新\n标题: {}\n链接: {}\n".format(
+                        telegram_list[i]["telegram_title"],  results[i][2], results[i][3]
                     )
                 bili_task_manager.update_telegram_info(telegram_list[i]["season_id"], results[i][1], results[i][5])
                 cover_msg = MessageSegment.image(results[i][4])
