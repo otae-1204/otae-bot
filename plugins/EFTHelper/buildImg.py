@@ -123,8 +123,8 @@ def build_ammo_image(ammo, qqId) -> int:
                     color = (255, 0, 0)
                 else:
                     color = (80,80,80)
-                row.text(pos=(825, 180), text="精度", fill=(80,80,80))
-                row.text(pos=(1010, 180), text=("+" + str(accuracyModifier) + "%" if accuracyModifier > 0 else
+                row.text(pos=(725, 180), text="精度", fill=(80,80,80))
+                row.text(pos=(910, 180), text=("+" + str(accuracyModifier) + "%" if accuracyModifier > 0 else
                                                 str(accuracyModifier) + "%"), fill=color)
                 recoilModifier = round(ammoList[i][j].recoilModifier * 100, 1)
                 print("子弹精度绘制完毕")
@@ -136,11 +136,11 @@ def build_ammo_image(ammo, qqId) -> int:
                     color = (0, 255, 0)
                 else:
                     color = (80,80,80)
-                row.text(pos=(825, 275), text="后座", fill=(80,80,80))
-                row.text(pos=(1010, 275), text=("+" + str(recoilModifier) + "%" if recoilModifier > 0 else
+                row.text(pos=(725, 275), text="后座", fill=(80,80,80))
+                row.text(pos=(910, 275), text=("+" + str(recoilModifier) + "%" if recoilModifier > 0 else
                                                 str(recoilModifier) + "%"), fill=color)
                 row.text(pos=(
-                    1380, 180), text="禁售" if ammoList[i][j].marketSale == 0 else " ", fill=(255, 0, 0))
+                    1230, 180), text="跳蚤禁售" if ammoList[i][j].marketSale == 0 else " ", fill=(255, 0, 0))
                 color = (0, 0, 0)
                 print("子弹后座以及禁售绘制完毕")
 
@@ -151,8 +151,9 @@ def build_ammo_image(ammo, qqId) -> int:
                     color = (0, 255, 0)
                 elif ammoList[i][j].tracerColor == "yellow":
                     color = (255, 255, 0)
+                print(ammoList[i][j].tracer)
                 row.text(
-                    pos=(1325, 275), text="曳" if ammoList[i][j].tracer else " ", fill=color)
+                    pos=(1325, 275), text="曳" if ammoList[i][j].tracer == "1" else " ", fill=color)
                 row.text(pos=(
                     1425, 275), text="亚" if ammoList[i][j].initialSpeed <= 340 else " ", fill=(80,80,80))
                 print("子弹弹迹绘制完毕")
@@ -280,7 +281,7 @@ async def build_ammo_info(ammoInfo, ammoMoreInfo: AmmoMoreInfo, qqId) -> int:
 
         # 绘制曳光颜色
         colorName = "无"
-        if ammoInfo.tracer:
+        if ammoInfo.tracer == "1":
             if ammoInfo.tracerColor == "red" or ammoInfo.tracerColor == "tracerRed":
                 colorName = "红"
             elif ammoInfo.tracerColor == "green" or ammoInfo.tracerColor == "tracerGreen":

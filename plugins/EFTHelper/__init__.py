@@ -112,6 +112,7 @@ async def hand(event: Event):
         isTempData = False
         basePrice = 0
         avg24hPrice = 0
+        resultData = None
         try:
             # 获取中文数据
             response = requests.post('https://api.tarkov.dev/graphql', json={'query': query_cn}, headers=headers,
@@ -264,6 +265,8 @@ async def hand(event: Event):
             # 若没有缓存数据则绘制粗略图
             imgResult = build_ammo_image(data, qqid)
         else:
+            if resultData is None:
+                await selectBullet.finish("查询出现问题,请联系开发者修复或尝试再次查询")
             # 构建详细信息对象
             ammoMoreInfo = AmmoMoreInfo(
                 resultData["basePrice"] if basePrice != -1 else basePrice,

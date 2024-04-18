@@ -109,7 +109,7 @@ async def query_task_name(taskId):
     """
     query_task = '{task(id:"' + taskId + '",lang:zh){name}}'
     headers = {"Content-Type": "application/json"}
-    async with httpx.AsyncClient(proxies={SYSTEM_PROXY["https"]:httpx.Proxy(url=SYSTEM_PROXY["https"])})as client:
+    async with httpx.AsyncClient(proxies={SYSTEM_PROXY["https"]: httpx.Proxy(url=SYSTEM_PROXY["https"])})as client:
         response = await client.post('https://api.tarkov.dev/graphql', json={'query': query_task}, headers=headers, timeout=30)
         if response.status_code == 200:
             result = response.json()
@@ -218,7 +218,7 @@ async def process_ammo_data(db: Database, ammo_data) -> int:
             ammo_id = await A_selectAmmoInDB(new_ammo)
             if ammo_id > 0:
                 await db.update_entity_async(
-                    dbAmmo,dbAmmo.id == ammo_id,
+                    dbAmmo, dbAmmo.id == ammo_id,
                     name=new_ammo.name,
                     caliber=new_ammo.caliber,
                     weight=new_ammo.weight,
@@ -250,10 +250,11 @@ async def process_ammo_data(db: Database, ammo_data) -> int:
                 else:
                     log.warning(f"文件 {image_path} 不存在")
                 # 下载新图片
-                async with httpx.AsyncClient(proxies={SYSTEM_PROXY["https"]:httpx.Proxy(url=SYSTEM_PROXY["https"])}) as client:
+                async with httpx.AsyncClient(proxies={SYSTEM_PROXY["https"]: httpx.Proxy(url=SYSTEM_PROXY["https"])}) as client:
                     response = await client.get(i["item"]["iconLink"], timeout=30)
                     if response.status_code == 200:
-                        img_path = caliber.replace("毫米", "mm").replace("/", "_").replace('"', "") + " " + name.rstrip().replace('"', "")
+                        img_path = caliber.replace("毫米", "mm").replace(
+                            "/", "_").replace('"', "") + " " + name.rstrip().replace('"', "")
                         with open(f"{path}/bullet/{img_path}.png", 'wb') as f:
                             f.write(response.content)
                         log.info(f"下载{img_path}成功")
@@ -262,37 +263,38 @@ async def process_ammo_data(db: Database, ammo_data) -> int:
                         return -1
             else:
                 await db.add_entity_async(dbAmmo,
-                id=None,
-                name=new_ammo.name,
-                caliber=new_ammo.caliber,
-                weight=new_ammo.weight,
-                stackMaxSize=new_ammo.stackMaxSize,
-                tracer=new_ammo.tracer,
-                tracerColor=new_ammo.tracerColor,
-                damage=new_ammo.damage,
-                armorDamage=new_ammo.armorDamage,
-                fragmentationChance=new_ammo.fragmentationChance,
-                ricochetChance=new_ammo.ricochetChance,
-                penetrationPower=new_ammo.penetrationPower,
-                accuracyModifier=new_ammo.accuracyModifier,
-                recoilModifier=new_ammo.recoilModifier,
-                lightBleedModifier=new_ammo.lightBleedModifier,
-                heavyBleedModifier=new_ammo.heavyBleedModifier,
-                img=new_ammo.img,
-                marketSale=new_ammo.marketSale,
-                apiID=new_ammo.apiID,
-                projectileCount=new_ammo.projectileCount,
-                initialSpeed=new_ammo.initialSpeed,
-                staminaBurnPerDamage=new_ammo.staminaBurnPerDamage
-                )
+                                          id=None,
+                                          name=new_ammo.name,
+                                          caliber=new_ammo.caliber,
+                                          weight=new_ammo.weight,
+                                          stackMaxSize=new_ammo.stackMaxSize,
+                                          tracer=new_ammo.tracer,
+                                          tracerColor=new_ammo.tracerColor,
+                                          damage=new_ammo.damage,
+                                          armorDamage=new_ammo.armorDamage,
+                                          fragmentationChance=new_ammo.fragmentationChance,
+                                          ricochetChance=new_ammo.ricochetChance,
+                                          penetrationPower=new_ammo.penetrationPower,
+                                          accuracyModifier=new_ammo.accuracyModifier,
+                                          recoilModifier=new_ammo.recoilModifier,
+                                          lightBleedModifier=new_ammo.lightBleedModifier,
+                                          heavyBleedModifier=new_ammo.heavyBleedModifier,
+                                          img=new_ammo.img,
+                                          marketSale=new_ammo.marketSale,
+                                          apiID=new_ammo.apiID,
+                                          projectileCount=new_ammo.projectileCount,
+                                          initialSpeed=new_ammo.initialSpeed,
+                                          staminaBurnPerDamage=new_ammo.staminaBurnPerDamage
+                                          )
                 # 下载新图片
-                async with httpx.AsyncClient(proxies={SYSTEM_PROXY["https"]:httpx.Proxy(url=SYSTEM_PROXY["https"])}) as client:
+                async with httpx.AsyncClient(proxies={SYSTEM_PROXY["https"]: httpx.Proxy(url=SYSTEM_PROXY["https"])}) as client:
                     response = await client.get(i["item"]["iconLink"], timeout=30)
                     if response.status_code == 200:
-                        img_path = caliber.replace("毫米", "mm").replace("/", "_").replace('"', "") + " " + name.rstrip().replace('"', "")
+                        img_path = caliber.replace("毫米", "mm").replace(
+                            "/", "_").replace('"', "") + " " + name.rstrip().replace('"', "")
                         with open(f"{path}/bullet/{img_path}.png", 'wb') as f:
                             f.write(response.content)
-                        log.info(f"下载{image_path}成功")
+                        log.info(f"下载{img_path}成功")
                     else:
                         log.error(f"请求失败,错误代码{response.status_code}")
                         return -1
@@ -306,7 +308,7 @@ async def process_ammo_data(db: Database, ammo_data) -> int:
 async def updateAmmoData() -> int:
     db = Database()
     headers = {"Content-Type": "application/json"}
-    async with httpx.AsyncClient(proxies={SYSTEM_PROXY["https"]:httpx.Proxy(url=SYSTEM_PROXY["https"])}) as client:
+    async with httpx.AsyncClient(proxies={SYSTEM_PROXY["https"]: httpx.Proxy(url=SYSTEM_PROXY["https"])}) as client:
         response = await client.post('https://api.tarkov.dev/graphql', json={'query': query_cn}, headers=headers, timeout=30)
         if response.status_code == 200:
             cnData = response.json()
@@ -328,28 +330,28 @@ async def A_insertAmmo(ammo: Ammo) -> int:
     try:
         db = Database()
         db.add_entity_async(dbAmmo,
-                        name=ammo.name,
-                        caliber=ammo.caliber,
-                        weight=ammo.weight,
-                        stackMaxSize=ammo.stackMaxSize,
-                        tracer=ammo.tracer,
-                        tracerColor=ammo.tracerColor,
-                        damage=ammo.damage,
-                        armorDamage=ammo.armorDamage,
-                        fragmentationChance=ammo.fragmentationChance,
-                        ricochetChance=ammo.ricochetChance,
-                        penetrationPower=ammo.penetrationPower,
-                        accuracyModifier=ammo.accuracyModifier,
-                        recoilModifier=ammo.recoilModifier,
-                        lightBleedModifier=ammo.lightBleedModifier,
-                        heavyBleedModifier=ammo.heavyBleedModifier,
-                        img=ammo.img,
-                        marketSale=ammo.marketSale,
-                        apiID=ammo.apiID,
-                        projectileCount=ammo.projectileCount,
-                        initialSpeed=ammo.initialSpeed,
-                        staminaBurnPerDamage=ammo.staminaBurnPerDamage
-                        )
+                            name=ammo.name,
+                            caliber=ammo.caliber,
+                            weight=ammo.weight,
+                            stackMaxSize=ammo.stackMaxSize,
+                            tracer=ammo.tracer,
+                            tracerColor=ammo.tracerColor,
+                            damage=ammo.damage,
+                            armorDamage=ammo.armorDamage,
+                            fragmentationChance=ammo.fragmentationChance,
+                            ricochetChance=ammo.ricochetChance,
+                            penetrationPower=ammo.penetrationPower,
+                            accuracyModifier=ammo.accuracyModifier,
+                            recoilModifier=ammo.recoilModifier,
+                            lightBleedModifier=ammo.lightBleedModifier,
+                            heavyBleedModifier=ammo.heavyBleedModifier,
+                            img=ammo.img,
+                            marketSale=ammo.marketSale,
+                            apiID=ammo.apiID,
+                            projectileCount=ammo.projectileCount,
+                            initialSpeed=ammo.initialSpeed,
+                            staminaBurnPerDamage=ammo.staminaBurnPerDamage
+                            )
     except Exception as e:
         log.error("错误方法: A_insertAmmo" + "错误原因:" + str(e))
         return -1
@@ -366,7 +368,7 @@ async def A_selectAmmoInDB(ammo: Ammo) -> int:
     """
     try:
         db = Database()
-        result = await db.get_entities_async(dbAmmo, and_(dbAmmo.name==ammo.name))
+        result = await db.get_entities_async(dbAmmo, and_(dbAmmo.name == ammo.name, dbAmmo.caliber == ammo.caliber))
         if result is None or len(result) == 0:
             return -1
         else:
