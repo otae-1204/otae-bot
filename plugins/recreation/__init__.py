@@ -1,4 +1,9 @@
-import random, json, datetime, requests, re, os
+import random
+import json
+import datetime
+import requests
+import re
+import os
 from nonebot import on_regex
 from nonebot.adapters import Event
 from nonebot.adapters.onebot.v11 import Bot, GroupMessageEvent
@@ -12,12 +17,14 @@ from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER
 MarryGroup = on_regex(r"^/娶群友$|^/jrlp$", flags=re.I)
 MarryGroupByForce = on_regex(r"^/强娶(.+?)$")
 Divorce = on_regex(r"^/离婚$")
-ManageDivorceNum = on_regex(r"^/修改离婚次数(.+?)$", permission=GROUP_ADMIN | GROUP_OWNER | SUPERUSER)
+ManageDivorceNum = on_regex(
+    r"^/修改离婚次数(.+?)$", permission=GROUP_ADMIN | GROUP_OWNER | SUPERUSER)
 TodaysLuck = on_regex(r"^/今日人品$|^/jrrp$|^签到$", flags=re.I)
 
 path = JSON_PATH + "recreation/"
 imgPath = IMAGE_PATH + "recreation/"
 updatableNum = 1
+
 
 @MarryGroup.handle()
 async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
@@ -32,9 +39,11 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
         try:
             partnerName = (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] if (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] != "" else (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["nickname"]
             with open(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg", "wb") as f:
-                f.write(requests.get(f"https://q1.qlogo.cn/g?b=qq&nk={marryList[groupId][playerId]['partnerId']}&s=640").content)
+                f.write(requests.get(
+                    f"https://q1.qlogo.cn/g?b=qq&nk={marryList[groupId][playerId]['partnerId']}&s=640").content)
             await MarryGroup.send(Message(f"[CQ:reply,id={msgid}]") + f"你今天已经娶过人了!\n你的老婆是\n{partnerName}({marryList[groupId][playerId]['partnerId']})"+image(img_name=f"{marryList[groupId][playerId]['partnerId']}.jpg", path=imgPath))
-            os.remove(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg")
+            os.remove(
+                f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg")
             return
         except ActionFailed as e:
             marryList[groupId][playerId]["partnerId"] = None
@@ -43,9 +52,11 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
         try:
             partnerName = (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] if (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] != "" else (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["nickname"]
             with open(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg", "wb") as f:
-                f.write(requests.get(f"https://q1.qlogo.cn/g?b=qq&nk={marryList[groupId][playerId]['partnerId']}&s=640").content)
+                f.write(requests.get(
+                    f"https://q1.qlogo.cn/g?b=qq&nk={marryList[groupId][playerId]['partnerId']}&s=640").content)
             await MarryGroup.send(Message(f"[CQ:reply,id={msgid}]") + f"你今天已经被娶过了!\n你的老公是\n{partnerName}({marryList[groupId][playerId]['partnerId']})"+image(img_name=f"{marryList[groupId][playerId]['partnerId']}.jpg", path=imgPath))
-            os.remove(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg")
+            os.remove(
+                f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg")
             return
         except ActionFailed as e:
             marryList[groupId][playerId]["partnerId"] = None
@@ -57,7 +68,7 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
             if state == "已被娶" or partnerId == playerId or state == "已娶":
                 partnerId = str(random.choice(groupMembers)["user_id"])
             else:
-                break        
+                break
         marryList[groupId][playerId]["state"] = 1
         marryList[groupId][playerId]["updateTime"] = date
         marryList[groupId][playerId]["partnerId"] = partnerId
@@ -68,7 +79,8 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
         try:
             partnerName = (await bot.get_group_member_info(group_id=groupId, user_id=partnerId))["card"] if (await bot.get_group_member_info(group_id=groupId, user_id=partnerId))["card"] != "" else (await bot.get_group_member_info(group_id=groupId, user_id=partnerId))["nickname"]
             with open(f"{imgPath}/{partnerId}.jpg", "wb") as f:
-                f.write(requests.get(f"https://q1.qlogo.cn/g?b=qq&nk={partnerId}&s=640").content)
+                f.write(requests.get(
+                    f"https://q1.qlogo.cn/g?b=qq&nk={partnerId}&s=640").content)
             await MarryGroup.send(Message(f"[CQ:reply,id={msgid}]") + f"你今天的老婆是\n{partnerName}({partnerId})"+image(img_name=f"{partnerId}.jpg", path=imgPath))
             os.remove(f"{imgPath}/{partnerId}.jpg")
         except ActionFailed as e:
@@ -77,9 +89,11 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
     else:
         await MarryGroup.finish(Message(f"[CQ:reply,id={msgid}]") + "未知错误!")
 
+
 @MarryGroupByForce.handle()
 async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
-    partnerId = re.findall(pattern=r"\[CQ:at,qq=(.+?)\]",string=str(event.get_message()))
+    partnerId = re.findall(
+        pattern=r"\[CQ:at,qq=(.+?)\]", string=str(event.get_message()))
     if len(partnerId) == 0:
         await MarryGroupByForce.finish("你没有@任何人!")
     elif len(partnerId) > 1:
@@ -97,9 +111,11 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
         try:
             partnerName = (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] if (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] != "" else (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["nickname"]
             with open(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg", "wb") as f:
-                f.write(requests.get(f"https://q1.qlogo.cn/g?b=qq&nk={marryList[groupId][playerId]['partnerId']}&s=640").content)
+                f.write(requests.get(
+                    f"https://q1.qlogo.cn/g?b=qq&nk={marryList[groupId][playerId]['partnerId']}&s=640").content)
             await MarryGroupByForce.send(Message(f"[CQ:reply,id={msgId}]") + f"你今天已经娶过人了!\n你的老婆是\n{partnerName}({marryList[groupId][playerId]['partnerId']})"+image(img_name=f"{marryList[groupId][playerId]['partnerId']}.jpg", path=imgPath))
-            os.remove(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg")
+            os.remove(
+                f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg")
             return
         except ActionFailed as e:
             marryList[groupId][playerId]["partnerId"] = None
@@ -108,9 +124,11 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
         try:
             partnerName = (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] if (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["card"] != "" else (await bot.get_group_member_info(group_id=groupId, user_id=marryList[groupId][playerId]["partnerId"]))["nickname"]
             with open(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg", "wb") as f:
-                f.write(requests.get(f"https://q1.qlogo.cn/g?b=qq&nk={marryList[groupId][playerId]['partnerId']}&s=640").content)
+                f.write(requests.get(
+                    f"https://q1.qlogo.cn/g?b=qq&nk={marryList[groupId][playerId]['partnerId']}&s=640").content)
             await MarryGroupByForce.send(Message(f"[CQ:reply,id={msgId}]") + f"你今天已经被娶过了!\n你的老公是\n{partnerName}({marryList[groupId][playerId]['partnerId']})"+image(img_name=f"{marryList[groupId][playerId]['partnerId']}.jpg", path=imgPath))
-            os.remove(f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg")
+            os.remove(
+                f"{imgPath}/{marryList[groupId][playerId]['partnerId']}.jpg")
             return
         except ActionFailed as e:
             marryList[groupId][playerId]["partnerId"] = None
@@ -131,14 +149,16 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
         try:
             partnerName = (await bot.get_group_member_info(group_id=groupId, user_id=partnerId))["card"] if (await bot.get_group_member_info(group_id=groupId, user_id=partnerId))["card"] != "" else (await bot.get_group_member_info(group_id=groupId, user_id=partnerId))["nickname"]
             with open(f"{imgPath}/{partnerId}.jpg", "wb") as f:
-                f.write(requests.get(f"https://q1.qlogo.cn/g?b=qq&nk={partnerId}&s=640").content)
+                f.write(requests.get(
+                    f"https://q1.qlogo.cn/g?b=qq&nk={partnerId}&s=640").content)
             await MarryGroupByForce.send(Message(f"[CQ:reply,id={msgId}]") + f"你今天的老婆是\n{partnerName}({partnerId})"+image(img_name=f"{partnerId}.jpg", path=imgPath))
             os.remove(f"{imgPath}/{partnerId}.jpg")
         except ActionFailed as e:
             await MarryGroupByForce.finish(Message(f"[CQ:reply,id={msgId}]") + "这个人不在群里了!")
         return
     else:
-        await MarryGroupByForce.finish(Message(f"[CQ:reply,id={msgId}]") + "未知错误!")        
+        await MarryGroupByForce.finish(Message(f"[CQ:reply,id={msgId}]") + "未知错误!")
+
 
 @Divorce.handle()
 async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
@@ -168,6 +188,7 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
     else:
         await Divorce.finish(Message(f"[CQ:reply,id={msgId}]") + "你今天还没结婚呢!")
 
+
 @ManageDivorceNum.handle()
 async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
     msgId = event.get_event_description().split(" ")[1]
@@ -175,7 +196,8 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
     DivorceNums = read_json(f"{path}DivorceNums.json")
     originNum = checkGroupDivorceNum(groupId)
     try:
-        num = int(re.findall(pattern=r"/修改离婚次数\s+(\S+)",string=str(event.get_message()))[0])
+        num = int(re.findall(pattern=r"/修改离婚次数\s+(\S+)",
+                  string=str(event.get_message()))[0])
         if num < 0:
             await ManageDivorceNum.finish(Message(f"[CQ:reply,id={msgId}]") + "离婚次数不能小于0!")
         elif num > 20:
@@ -191,7 +213,6 @@ async def handle_first_receive(bot: Bot, event: GroupMessageEvent):
         await ManageDivorceNum.finish(Message(f"[CQ:reply,id={msgId}]") + f"未知错误:{e}")
 
 
-
 # 检查某人今天的状态
 def checkPlayerState(groupId, playerId, date, marryList) -> str:
     """
@@ -199,18 +220,18 @@ def checkPlayerState(groupId, playerId, date, marryList) -> str:
     :param groupId: 群号
     :param playerId: QQ号
     :param date: 日期
-    
+
     :return: 状态
     """
     if groupId not in marryList.keys():
-        marryList[groupId] = { 
-                playerId : {
-                    "state" : 0,
-                    "updateTime": date,
-                    "partnerId": None,
-                    "updatableNum": checkGroupDivorceNum(groupId)
-                }
+        marryList[groupId] = {
+            playerId: {
+                "state": 0,
+                "updateTime": date,
+                "partnerId": None,
+                "updatableNum": checkGroupDivorceNum(groupId)
             }
+        }
         return "未娶"
     if str(playerId) in marryList[groupId]:
         if marryList[groupId][playerId]["updateTime"] == date and marryList[groupId][playerId]["state"] == 1:
@@ -220,11 +241,12 @@ def checkPlayerState(groupId, playerId, date, marryList) -> str:
         else:
             if marryList[groupId][playerId]["updateTime"] != date:
                 marryList[groupId][playerId]["state"] = 0
-                marryList[groupId][playerId]["updatableNum"] = checkGroupDivorceNum(groupId)
+                marryList[groupId][playerId]["updatableNum"] = checkGroupDivorceNum(
+                    groupId)
             return "未娶"
     else:
         marryList[groupId][playerId] = {
-            "state" : 0,
+            "state": 0,
             "updateTime": date,
             "partnerId": None,
             "updatableNum": checkGroupDivorceNum(groupId)
@@ -232,11 +254,13 @@ def checkPlayerState(groupId, playerId, date, marryList) -> str:
         return "未娶"
 
 # 检查本群离婚次数
+
+
 def checkGroupDivorceNum(groupId) -> int:
     """
     检查本群离婚次数
     :param groupId: 群号
-    
+
     :return: 离婚次数
     """
     DivorceNums = read_json(f"{path}DivorceNums.json")
@@ -248,6 +272,8 @@ def checkGroupDivorceNum(groupId) -> int:
         return int(DivorceNums[groupId])
 
 # 读取 JSON 文件
+
+
 def read_json(file_path, create_if_not_exists=True):
     """
     读取 JSON 文件并返回字典，如果文件不存在则创建新文件
@@ -272,6 +298,8 @@ def read_json(file_path, create_if_not_exists=True):
         return None
 
 # 写入 JSON 文件
+
+
 def write_json(file_path, data):
     """
     将字典写入 JSON 文件
@@ -284,6 +312,7 @@ def write_json(file_path, data):
         print(f"Data written to '{file_path}' successfully.")
     except json.JSONDecodeError as e:
         print(f"Error encoding JSON data: {e}")
+
 
 # 插件被加载的时候检查资源文件夹有没有被创建
 if not os.path.exists(path):
