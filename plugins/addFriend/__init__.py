@@ -105,7 +105,7 @@ async def _(bot: Bot, event: RequestEvent):
 
 
 
-againReadConfig= on_command("重载配置",aliases={"更改自动同意","更改最大加数量","更改加时间","更改加时间单位","更改查看加返回数量"},priority=5,block=True,permission=SUPERUSER)
+againReadConfig= on_command("重载配置",aliases={"更改自动同意","更改最大加数量","更改加时间","更改加时间单位","更改查看加返回数量"},priority=0,block=True,permission=SUPERUSER)
 @againReadConfig.handle()
 async def _(bot: Bot, event: MessageEvent,args: Message = CommandArg()):
     global config
@@ -188,7 +188,7 @@ async def _(bot: Bot, event: MessageEvent,args: Message = CommandArg()):
     await againReadConfig.finish(resMsg)
     
         
-addFriend = on_command("同意加",aliases={'拒绝加','查看加'},priority=5,block=True)
+addFriend = on_command("同意加",aliases={'拒绝加','查看加'},priority=0,block=True)
 @addFriend.handle()
 async def _(bot: Bot, event: MessageEvent,args: Message = CommandArg()):
     check_dict_key_bot_id(config,requestorDict,numDict,bot)
@@ -279,7 +279,7 @@ async def _(bot: Bot, event: MessageEvent,args: Message = CommandArg()):
         await bot.send_private_msg(user_id=requestorId, message=welcome_msg)
    
 # @scheduler.scheduled_job('interval', hour=1, id='check_outdate', timezone="Asia/Shanghai")
-delRequestorDict = on_command("清理请求表",priority=5, block=True,permission=SUPERUSER)
+delRequestorDict = on_command("清理请求表",priority=0, block=True,permission=SUPERUSER)
 @delRequestorDict.handle()
 async def check_outdate(bot:Bot, event: MessageEvent):
     check_dict_key_bot_id(config,requestorDict,numDict,bot)
@@ -300,7 +300,7 @@ async def check_outdate(bot:Bot, event: MessageEvent):
     await delRequestorDict.send(msg)
     
 
-reFriendReqNum = on_command("重置请求次数",block=True,priority=5,permission=SUPERUSER)
+reFriendReqNum = on_command("重置请求次数",block=True,priority=0,permission=SUPERUSER)
 @reFriendReqNum.handle()
 async def _(bot: Bot, event: MessageEvent,args: Message = CommandArg()):
     check_dict_key_bot_id(config,requestorDict,numDict,bot)
@@ -328,7 +328,7 @@ async def _(bot: Bot, event: MessageEvent,args: Message = CommandArg()):
     writeTime(numDictPath,numDict)
     await reFriendReqNum.finish('重置成功,为{}'.format(numDict[bot.self_id][autoType]['count']))
 
-addRecipient = on_command("添加请求接收者",aliases={"删除请求接收者"},block=True,priority=5,permission=SUPERUSER)
+addRecipient = on_command("添加请求接收者",aliases={"删除请求接收者"},block=True,priority=0,permission=SUPERUSER)
 @addRecipient.handle()
 async def _(bot: Bot, event: MessageEvent,args: Message = CommandArg()):
     check_dict_key_bot_id(config,requestorDict,numDict,bot)
@@ -353,7 +353,7 @@ async def _(bot: Bot, event: MessageEvent,args: Message = CommandArg()):
     else:
         await addRecipient.finish('不是{}的好友或者格式错误'.format(config[bot.self_id]['botName']))
    
-friendHelp=on_command("加好友帮助",block=True,priority=5,permission=SUPERUSER)
+friendHelp=on_command("加好友帮助",block=True,priority=0,permission=SUPERUSER)
 @friendHelp.handle()
 async def _(bot: Bot, event: MessageEvent):
     msg='重载配置\n更改自动同意,更改最大加数量,更改查看加返回数量,更改加时间,更改加时间单位(群聊、好友)\n同意加,拒绝加,查看加(群聊、好友)\n清理请求表\n重置请求次数(群聊、好友)\n添加请求接收者,删除请求接收者'
@@ -361,7 +361,7 @@ async def _(bot: Bot, event: MessageEvent):
 
 
 
-# agreeForward = on_command("设置bot私聊转发",block=True,priority=5,permission=SUPERUSER)
+# agreeForward = on_command("设置bot私聊转发",block=True,priority=0,permission=SUPERUSER)
 # @agreeForward.handle()
 # async def _(bot: Bot, event: MessageEvent):
 #     check_dict_key_bot_id(config,requestorDict,numDict,bot)
