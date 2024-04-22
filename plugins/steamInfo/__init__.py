@@ -22,13 +22,13 @@ from .steam import get_steam_id, get_steam_users_info, STEAM_ID_OFFSET
 from .draw import draw_friends_status, simplize_steam_player_data, image_to_bytes
 
 # logs = LogUtils("steamInfo")
-bind = on_command("steambind", aliases={"绑定steam"}, priority=10)
-info = on_command("steaminfo", aliases={"steam信息"}, priority=10)
-check = on_command("steamcheck", aliases={"查看steam", "查steam","看看steam"}, priority=10)
-update_parent_info = on_command("steamupdate", priority=10)
-add = on_command("addsteambind",aliases={"添加Steam绑定"}, priority=10, permission=SUPERUSER)
-setname = on_command("setname",aliases={"设置昵称"}, priority=10)
-setusername = on_command("setusername",aliases={"设置用户昵称"}, priority=10, permission=SUPERUSER)
+bind = on_command("steambind", aliases={"绑定steam"}, priority=1)
+info = on_command("steaminfo", aliases={"steam信息"}, priority=1)
+check = on_command("steamcheck", aliases={"查看steam", "查steam","看看steam"}, priority=1)
+update_parent_info = on_command("steamupdate", priority=1)
+add = on_command("addsteambind",aliases={"添加Steam绑定"}, priority=1, permission=SUPERUSER)
+setname = on_command("setname",aliases={"设置昵称"}, priority=1)
+setusername = on_command("setusername",aliases={"设置用户昵称"}, priority=1, permission=SUPERUSER)
 
 
 if hasattr(nonebot, "get_plugin_config"):
