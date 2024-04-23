@@ -369,7 +369,33 @@ async def getUserData(
     result = await a_get_data_from_backend(url, data)
     return result
 
-
+async def bindPlayerRequest(
+    platform: str,
+    user_id: str,
+    bindType: bool,
+    server: str = None
+):
+    """
+    说明:
+        绑定玩家ID
+    参数:
+        platform: 平台      str
+        user_id:  用户id    str
+        bindType: 绑定类型  bool  True/False
+        server:   服务器    str   默认国服
+    返回:
+        dict: ["status": "suc", "data": [xxxxx]]
+    """
+    await getUserData(platform, user_id)
+    url = f"{config.api_base}/user/bindPlayerRequest"
+    data = {
+        "platform": platform,
+        "user_id": user_id,
+        "server": server if server else 3,
+        "bindType": bindType
+    }
+    result = await a_get_data_from_backend(url, data)
+    return result
 
 
 
