@@ -310,7 +310,7 @@ async def submitRoomNumber(
         userName:            用户名
         bandoriStationToken: token
     返回:
-        dict: ["base64","xxxxxxxxxxx"]
+        dict: ["status": "suc", "data": [xxxxx]]
     """
     url = f"{config.api_base}/station/submitRoomNumber"
     data = {
@@ -348,7 +348,26 @@ async def searchCard(
     result = await a_get_data_from_backend(url, data)
     return result
 
-
+async def getUserData(
+    platform: str,
+    user_id: str
+):
+    """
+    说明:
+        获取用户数据
+    参数:
+        platform: 平台     str
+        user_id:  用户id   str
+    返回:
+        dict: ["status": "suc", "data": [xxxxx]]
+    """
+    url = f"{config.api_base}/user/getUserData"
+    data = {
+        "platform": platform,
+        "user_id": user_id
+    }
+    result = await a_get_data_from_backend(url, data)
+    return result
 
 
 
