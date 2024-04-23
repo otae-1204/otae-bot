@@ -11,15 +11,19 @@ async def test():
     
     # result = await ycm()
     # print(result)
-    result = await searchCard([3,0],"947")
-        
-    for i in result:
-        if "type" in i and i["type"] == "string":
-            print(i["string"])
-        else:
-            base = i["string"]
-            print(f"[图像大小: {len(base) / 1024:.2f}KB]") if isinstance(base, bytes) else None
-            Image.open(io.BytesIO(base64.b64decode(base))).show()
+    
+    result = await getUserData("onebot","2461673400")
+    print(result)
+    
+    # result = await searchCard([3,0],"947")
+
+    # for i in result:
+    #     if "type" in i and i["type"] == "string":
+    #         print(i["string"])
+    #     else:
+    #         base = i["string"]
+    #         print(f"[图像大小: {len(base) / 1024:.2f}KB]") if isinstance(base, bytes) else None
+    #         Image.open(io.BytesIO(base64.b64decode(base))).show()
 
 
 
