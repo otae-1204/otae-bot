@@ -325,7 +325,28 @@ async def submitRoomNumber(
     result = await a_get_data_from_backend(url, data)
     return result
 
-
+async def searchCard(
+    default_servers: int,
+    cardName: str,
+):
+    """
+    说明:
+        查询卡片
+    参数:
+        default_servers: 默认服务器      list
+        cardName:        卡片名称        str
+    返回:
+        dict: ["base64","xxxxxxxxxxx"]
+    """
+    url = f"{config.api_base}/searchCard"
+    data = {
+        "default_servers": default_servers,
+        "text": cardName,
+        "useEasyBG": config.use_easy_bg,
+        "compress": config.compress
+    }
+    result = await a_get_data_from_backend(url, data)
+    return result
 
 
 
