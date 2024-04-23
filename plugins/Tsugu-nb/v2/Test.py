@@ -12,9 +12,11 @@ async def test():
     # result = await ycm()
     # print(result)
     
-    result = await getUserData("onebot","2461673400")
-    print(result)
+    # result = await getUserData("onebot","2461673400")
+    # print(result)
     
+    result = await bindPlayerRequest("onebot","2461673400",True)
+    print(result)
     # result = await searchCard([3,0],"947")
 
     # for i in result:
