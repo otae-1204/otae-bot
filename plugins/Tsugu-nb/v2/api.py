@@ -279,19 +279,17 @@ async def room_list(
     print(result)
     return result
 
-async def ycm():
+async def query_allRoom():
     """
     说明:
-        查询最近车站车牌
+        从车站获取全部车牌
     返回:
-        list[dict]: [{"type": "base64/string", "string": "xxxxx"}]
+        dict[list]: 
+        如{status: data:[{"number": 234211,"rawMessage": "234211 测试q1","source": "BandoriStation","userId": xxx,"time": xxx,"avanter": "","userName": ""}]}
     """
     url = f"{config.api_base}/station/queryAllRoom"
     result = await a_get_data_from_backend_get(url)
-    if result["status"] == "success":
-        return await room_list(result["data"])
-    else:
-        return [{"type": "string", "string": "查询失败"}]
+    return result
 
 async def submit_room_number(
     number: int,
@@ -498,6 +496,22 @@ async def set_default_server(
 
 
 
+
+
+
+
+async def ycm():
+    """
+    说明:
+        ycm功能
+    返回:
+        list[dict]: [{"type": "base64/string", "string": "xxxxx"}]
+    """
+    result = await query_allRoom()
+    if result["status"] == "success":
+        return await room_list(result["data"])
+    else:
+        return [{"type": "string", "string": "查询失败"}]
 
 async def get_user(platform:str, user_id: str) -> User:
     """
