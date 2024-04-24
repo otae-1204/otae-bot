@@ -472,3 +472,27 @@ async def set_car_forwarding(
     result = await a_get_data_from_backend(url, data)
     return result
 
+async def set_default_server(
+    platform: str,
+    user_id: str,
+    text: str
+):
+    """
+    说明:
+        设置默认服务器
+    参数:
+        platform: 平台      如: onebot
+        user_id:  用户id    如: 2461673400
+        text:     服务器    如: jp/3        范围: [cn,jp]/0-4
+    返回:
+        dict: {'status': 'success'}
+    """
+    url = f"{config.api_base}/user/changeUserData/setDefaultServer"
+    data = {
+        "platform": platform,
+        "user_id": user_id,
+        "text": text
+    }
+    result = await a_get_data_from_backend(url, data)
+    return result
+
