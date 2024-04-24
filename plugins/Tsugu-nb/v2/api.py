@@ -496,3 +496,18 @@ async def set_default_server(
     result = await a_get_data_from_backend(url, data)
     return result
 
+
+
+
+async def get_user(platform:str, user_id: str) -> User:
+    """
+    说明:
+        获取用户数据
+    参数:
+        platform (str): 平台
+        user_id (str): 用户ID
+    返回:
+        User: 用户对象
+    """
+    result = await get_user_data(platform, user_id)
+    return User(**result["data"]) if result["status"] == "success" else None
