@@ -1,5 +1,5 @@
 import json,re,httpx
-from entity import Config
+from entity import Config,User
 
 config = Config()
 
@@ -47,6 +47,7 @@ def is_car(message: str) -> bool:
     return is_car
 
 
+
 async def a_get_data_from_backend(api: str, data: dict) -> dict:
     """从后端API获取数据
 
@@ -67,11 +68,12 @@ async def a_get_data_from_backend(api: str, data: dict) -> dict:
             ) as client:
             response = await client.post(api, json=data)
             print(response.status_code)
+            if response.status_code == 400:
+                return [{"type": "string", "string": response.json()["data"]}]
+            
             response.raise_for_status()
-            # print(response.text)
             return response.json()
     except httpx.HTTPError as e:
-        print(e)
         return [{"type": "string", "string": f"后端服务器连接出错\n{e}\n{data}"}]
     except Exception as e:
         print(e)
