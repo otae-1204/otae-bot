@@ -5,14 +5,14 @@ import time
 config = Config()
 
 
-async def CardIllustration(cardId: int) -> dict:
+async def card_illustration(cardId: int) -> dict:
     """
     说明:
         获取卡片插画
     参数:
-        cardId: 卡片ID
+        cardId: 卡片ID 如:947
     返回:
-        dict: ["base64","xxxxxxxxxxx"]
+        list[dict]: [{"type": "base64/string", "string": "xxxxx"}]
     """
     url = f"{config.api_base}/getCardIllustration"
     data = {
@@ -21,18 +21,18 @@ async def CardIllustration(cardId: int) -> dict:
     result = await a_get_data_from_backend(url, data)
     return result
 
-async def gachaSimulate(
-    server_mode: int,
+async def gacha_simulate(
+    server_mode: int | str,
     gachaId: int = None
 ):
     """
     说明:
         模拟抽卡
     参数:
-        server_mode: 服务器模式     0-4
-        gachaId:     卡池ID        int        
+        server_mode: 服务器id  例: 4 范围: 0-4
+        gachaId:     卡池ID    例: 228       
     返回:
-        dict: ["base64","xxxxxxxxxxx"]
+        list[dict]: [{"type": "base64/string", "string": "xxxxx"}]
     """
     url = f"{config.api_base}/gachaSimulate"
     data = {
@@ -44,18 +44,18 @@ async def gachaSimulate(
     result = await a_get_data_from_backend(url, data)
     return result
 
-async def searchGacha(
-    default_servers: int,
+async def search_gacha(
+    default_servers: list[int],
     gachaId: int,
 ):
     """
     说明:
         查询卡池
     参数:
-        default_servers: 默认服务器       list
-        gachaId:         卡池ID           int
+        default_servers: 默认服务器编号[主,副]  如: [3,0]  范围: 0-4
+        gachaId:         卡池ID                如: 228
     返回:
-        dict: ["base64","xxxxxxxxxxx"]
+        list[dict]: [{"type": "base64/string", "string": "xxxxx"}]
     """
     url = f"{config.api_base}/searchGacha"
     data = {
@@ -67,18 +67,18 @@ async def searchGacha(
     result = await a_get_data_from_backend(url, data)
     return result
 
-async def searchEvent(
-    default_servers: int,
+async def search_event(
+    default_servers: list[int],
     eventName: str,
 ):
     """
     说明:
         查询活动
     参数:
-        default_servers: 默认服务器        list
-        eventId:         活动ID           int
+        default_servers: 默认服务器编号[主,副]  如: [3,0]  范围: 0-4
+        eventId:         活动id或名称          如: 41/双重彩虹
     返回:
-        dict: ["base64","xxxxxxxxxxx"]
+        list[dict]: [{"type": "base64/string", "string": "xxxxx"}]
     """
     url = f"{config.api_base}/searchEvent"
     data = {
@@ -90,18 +90,18 @@ async def searchEvent(
     result = await a_get_data_from_backend(url, data)
     return result
 
-async def searchSong(
-    default_servers: int,
+async def search_song(
+    default_servers: list[int],
     songName: str,
 ):
     """
     说明:
         查询歌曲
     参数:
-        default_servers: 默认服务器        list
-        songName:        歌曲名称
+        default_servers: 默认服务器编号[主,副]  如: [3,0]  范围: 0-4
+        songName:        歌曲名称              如: Jumpin
     返回:
-        dict: ["base64","xxxxxxxxxxx"]
+        list[dict]: [{"type": "base64/string", "string": "xxxxx"}]
     """
     url = f"{config.api_base}/searchSong"
     data = {
@@ -113,16 +113,16 @@ async def searchSong(
     result = await a_get_data_from_backend(url, data)
     return result
 
-async def songMeta(
-    default_servers: int,
+async def song_meta(
+    default_servers: list[int],
     server: int,
 ):
     """
     说明:
         查询歌曲Meta
     参数:
-        default_servers: 默认服务器        list
-        server:          服务器id          0-4
+        default_servers: 默认服务器编号[主,副]  如: [3,0]  范围: 0-4
+        server:          服务器id              如: 3      范围: 0-4
     返回:
         dict: ["base64","xxxxxxxxxxx"]
     """
@@ -135,16 +135,16 @@ async def songMeta(
     result = await a_get_data_from_backend(url, data)
     return result
 
-async def searchCharacter(
-    default_servers: int,
+async def search_character(
+    default_servers: list[int],
     characterName: str,
 ):
     """
     说明:
         查询角色
     参数:
-        default_servers: 默认服务器      list
-        characterName:   角色名称
+        default_servers: 默认服务器编号[主,副]  如: [3,0]  范围: 0-4
+        characterName:   角色名称              如: otae
     返回:
         dict: ["base64","xxxxxxxxxxx"]
     """
@@ -157,8 +157,8 @@ async def searchCharacter(
     result = await a_get_data_from_backend(url, data)
     return result
 
-async def songChart(
-    default_servers: int,
+async def song_chart(
+    default_servers: list[int],
     songName: int,
     difficulty: int,
 ):
@@ -166,11 +166,11 @@ async def songChart(
     说明:
         查询歌曲谱面
     参数:
-        default_servers: 默认服务器     list
-        songId:          歌曲id        int
-        difficultyText:  难度          easy,normal,hard,expert,special
+        default_servers: 默认服务器编号[主,副]  如: [3,0]  范围: 0-4
+        songId:          歌曲id                如: 170
+        difficultyText:  难度                  如: expert 范围: easy/normal/hard/expert/special
     返回:
-        dict: ["base64","xxxxxxxxxxx"]
+        list[dict]: [{"type": "base64/string", "string": "xxxxx"}]
     """
     url = f"{config.api_base}/songChart"
     data = {
@@ -182,18 +182,18 @@ async def songChart(
     result = await a_get_data_from_backend(url, data)
     return result
 
-async def ycxAll(
+async def ycx_all(
     server: int,
     eventId: int = None
 ):
     """
     说明:
-        查询全服排行
+        查询全档位预测线
     参数:
-        server: 服务器id
-        eventId: 活动id
+        server: 服务器id  如: 3  范围: 0-4
+        eventId: 活动id   如: 41
     返回:
-        dict: ["base64","xxxxxxxxxxx"]
+        list[dict]: [{"type": "base64/string", "string": "xxxxx"}]
     """
     url = f"{config.api_base}/ycxAll"
     data = {
@@ -212,13 +212,13 @@ async def ycx(
 ):
     """
     说明:
-        查询排行
+        查询排行榜预测线
     参数:
-        server:  服务器id  0-3
-        tier:    排名      int
-        eventId: 活动id    int
+        server:  服务器id  如: 3     范围: 0-4
+        tier:    排名      如: 100   范围: 10,20,30,50,100,200,300,500,1000,......
+        eventId: 活动id    如: 41
     返回:
-        dict: ["base64","xxxxxxxxxxx"]
+        list[dict]: [{"type": "base64/string", "string": "xxxxx"}]
     """
     url = f"{config.api_base}/ycx"
     data = {
@@ -238,11 +238,11 @@ async def lsycx(
     ):
     """
     说明:
-        查询历史排行
+        查询历史排行榜分数线
     参数:
-        server:  服务器id  0-3
-        tier:    排名      int
-        eventId: 活动id    int
+        server:  服务器id  如: 3     范围: 0-4
+        tier:    排名      如: 100   范围: 10,20,30,50,100,200,300,500,1000,......
+        eventId: 活动id    如: 41
     返回:
         dict: ["base64","xxxxxxxxxxx"]
     """
@@ -257,16 +257,17 @@ async def lsycx(
     result = await a_get_data_from_backend(url, data)
     return result
 
-async def roomList(
+async def room_list(
     roomList: list
 ):
     """
     说明:
         车牌绘图
     参数:
-        roomList: 车牌列表 list
+        roomList: 车牌列表 
+        如: [{"number": 234211,"rawMessage": "234211 测试q1","source": "BandoriStation","userId": xxx,"time": xxx,"avanter": "","userName": ""}]
     返回:
-        dict: ["status": "suc", "data": [xxxxx]]
+        list[dict]: [{"type": "base64/string", "string": "xxxxx"}]
     """
     url = f"{config.api_base}/roomList"
     data = {
@@ -283,16 +284,16 @@ async def ycm():
     说明:
         查询最近车站车牌
     返回:
-        dict: ["base64","xxxxxxxxxxx"]
+        list[dict]: [{"type": "base64/string", "string": "xxxxx"}]
     """
     url = f"{config.api_base}/station/queryAllRoom"
     result = await a_get_data_from_backend_get(url)
     if result["status"] == "success":
-        return await roomList(result["data"])
+        return await room_list(result["data"])
     else:
         return [{"type": "string", "string": "查询失败"}]
 
-async def submitRoomNumber(
+async def submit_room_number(
     number: int,
     rawMessage: str,
     platform: str,
@@ -303,14 +304,13 @@ async def submitRoomNumber(
     说明:
         提交车牌号
     参数:
-        number:              车牌号
-        rawMessage:          原始消息
-        platform:            平台
-        user_id:             用户id
-        userName:            用户名
-        bandoriStationToken: token
+        number:       车牌号    如: 125231
+        rawMessage:   原始消息  如: 125231 测试q1
+        platform:     平台      如: onebot
+        user_id:      用户id    如: 2461673400
+        userName:     用户名    如: otae
     返回:
-        dict: ["status": "suc", "data": [xxxxx]]
+        dict: {"status": "suc", "data": [xxxxx]}
     """
     url = f"{config.api_base}/station/submitRoomNumber"
     data = {
@@ -319,24 +319,24 @@ async def submitRoomNumber(
         "platform": platform,
         "user_id": user_id,
         "userName": userName,
-        "time": int(time.time())
-        # "bandoriStationToken": config.bandori_station_token
+        "time": int(time.time()),
+        "bandoriStationToken": config.bandori_station_token
     }
     result = await a_get_data_from_backend(url, data)
     return result
 
-async def searchCard(
-    default_servers: int,
+async def search_card(
+    default_servers: list[int],
     cardName: str,
 ):
     """
     说明:
         查询卡片
     参数:
-        default_servers: 默认服务器      list
-        cardName:        卡片名称        str
+        default_servers: 默认服务器编号[主,副]  如: [3,0]  范围: 0-4
+        cardName:        卡片编号/名称         如: 947/otae 
     返回:
-        dict: ["base64","xxxxxxxxxxx"]
+        list[dict]: [{"type": "base64/string", "string": "xxxxx"}]
     """
     url = f"{config.api_base}/searchCard"
     data = {
@@ -348,18 +348,18 @@ async def searchCard(
     result = await a_get_data_from_backend(url, data)
     return result
 
-async def getUserData(
+async def get_user_data(
     platform: str,
     user_id: str
 ):
     """
-    说明:
+    :
         获取用户数据
     参数:
-        platform: 平台     str
-        user_id:  用户id   str
+        platform: 平台    如: onebot
+        user_id:  用户id  如: 2461673400
     返回:
-        dict: ["status": "suc", "data": [xxxxx]]
+        list[dict]: [{"status": "success", "data": {"_id": "xxx",......}}]
     """
     url = f"{config.api_base}/user/getUserData"
     data = {
@@ -369,34 +369,86 @@ async def getUserData(
     result = await a_get_data_from_backend(url, data)
     return result
 
-async def bindPlayerRequest(
+async def bind_player_request(
     platform: str,
     user_id: str,
     bindType: bool,
-    server: str = None
+    server: int = 3
 ):
     """
     说明:
         绑定玩家ID
     参数:
-        platform: 平台      str
-        user_id:  用户id    str
-        bindType: 绑定类型  bool  True/False
-        server:   服务器    str   默认国服
+        platform: 平台     如: onebot
+        user_id:  用户id   如: 2461673400
+        bindType: 绑定类型  如: True       范围: True/False
+        server:   服务器id  如: 3          范围: 0-4 默认3既国服    
     返回:
-        dict: ["status": "suc", "data": [xxxxx]]
+        dict: {"status": "success","data": {"verifyCode": xxxxx}}
     """
-    await getUserData(platform, user_id)
     url = f"{config.api_base}/user/bindPlayerRequest"
     data = {
         "platform": platform,
         "user_id": user_id,
-        "server": server if server else 3,
+        "server": server,
         "bindType": bindType
     }
     result = await a_get_data_from_backend(url, data)
     return result
 
+async def bind_player_verification(
+    platform: str,
+    user_id: str,
+    playerId: int,
+    bindType: bool,
+    server: str = 3
+):
+    """
+    说明:
+        绑定玩家ID
+    参数:
+        platform: 平台      如: onebot
+        user_id:  用户id    如: 2461673400
+        playerId: 玩家id    如: 1002545123
+        bindType: 绑定类型  如: True       范围: True/False
+        server:   服务器    如: 3          范围: 0-4 默认3既国服
+    返回:
+        dict: {'status': 'success', 'data': '绑定玩家1002545123成功'}
+    """
+    url = f"{config.api_base}/user/bindPlayerVerification"
+    data = {
+        "platform": platform,
+        "user_id": user_id,
+        "server": server,
+        "playerId": playerId,
+        "bindType": bindType
+    }
+    result = await a_get_data_from_backend(url, data)
+    return result
+
+async def set_server_mode(
+    platform: str,
+    user_id: str,
+    text: str
+):
+    """
+    说明:
+        设置服务器模式
+    参数:
+        platform: 平台      如: onebot
+        user_id:  用户id    如: 2461673400
+        text:     服务器    如: jp/3        范围: [cn,jp]/0-4
+    返回:
+        dict: {'status': 'success'}
+    """
+    url = f"{config.api_base}/user/changeUserData/setServerMode"
+    data = {
+        "platform": platform,
+        "user_id": user_id,
+        "text": text
+    }
+    result = await a_get_data_from_backend(url, data)
+    return result
 
 
 
