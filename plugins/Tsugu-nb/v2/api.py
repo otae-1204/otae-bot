@@ -450,5 +450,25 @@ async def set_server_mode(
     result = await a_get_data_from_backend(url, data)
     return result
 
-
+async def set_car_forwarding(
+    platform: str,
+    user_id: str,
+    status: bool
+):
+    """
+    说明:
+        设置玩家车牌转发
+    参数:
+        platform: 平台      如: onebot
+        user_id:  用户id    如: 2461673400
+        status:   状态      如: True       范围: True/False    
+    """
+    url = f"{config.api_base}/user/changeUserData/setCarForwarding"
+    data = {
+        "platform": platform,
+        "user_id": user_id,
+        "status": status
+    }
+    result = await a_get_data_from_backend(url, data)
+    return result
 
