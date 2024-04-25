@@ -5,16 +5,6 @@ config = Config()
 
 
 
-def saveJson(path, data) -> bool:
-    try:
-        with open(path, "w", encoding="UTF-8") as file:
-            json.dump(data, file, indent=4)
-        return True
-    except Exception as e:
-        print(e)
-        return False
-
-
 def is_car(message: str) -> bool:
     """判断消息是否为车牌指令
 
@@ -46,9 +36,23 @@ def is_car(message: str) -> bool:
 
     return is_car
 
+def is_command(message: str) -> bool:
+    """判断消息是否为命令
+
+    Args:
+        message (str): 用户发送的消息
+
+    Returns:
+        bool: 是否为命令
+    """
+    for cmd in config.cmd_list:
+        for key in cmd["command_name"]:
+            if message.startswith(key) and bool(cmd["ifEnable"]):
+                return True
+    return False
 
 
-async def a_get_data_from_backend(api: str, data: dict) -> dict:
+async def apost_api(api: str, data: dict) -> dict:
     """从后端API获取数据
 
     Args:
@@ -79,7 +83,7 @@ async def a_get_data_from_backend(api: str, data: dict) -> dict:
         print(e)
         return [{"type": "string", "string": f"出现未知错误\n{e}"}]
 
-async def a_get_data_from_backend_get(api: str) -> dict:
+async def aget_api(api: str) -> dict:
     """从后端API获取数据
 
     Args:
