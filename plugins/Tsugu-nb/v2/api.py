@@ -18,7 +18,7 @@ async def card_illustration(cardId: int) -> dict:
     data = {
         "cardId": cardId
     }
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     return result
 
 async def gacha_simulate(
@@ -41,7 +41,7 @@ async def gacha_simulate(
     }
     if gachaId:
         data["gachaId"] = gachaId
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     return result
 
 async def search_gacha(
@@ -64,7 +64,7 @@ async def search_gacha(
         "useEasyBG": config.use_easy_bg,
         "compress": config.compress
     }
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     return result
 
 async def search_event(
@@ -87,7 +87,7 @@ async def search_event(
         "useEasyBG": config.use_easy_bg,
         "compress": config.compress
     }
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     return result
 
 async def search_song(
@@ -110,7 +110,30 @@ async def search_song(
         "useEasyBG": config.use_easy_bg,
         "compress": config.compress
     }
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
+    return result
+
+async def search_player(
+    playerId: int,
+    server: int = 3
+):
+    """
+    说明:
+        查询玩家
+    参数:
+        playerId: 玩家id   如: 1002545123
+        server:   服务器id 如: 3
+    返回:
+        list[dict]: [{"type": "base64/string", "string": "xxxxx"}]
+    """
+    url = f"{config.api_base}/searchPlayer"
+    data = {
+        "playerId": playerId,
+        "server": server,
+        "compress": config.compress,
+        "useEasyBG": config.use_easy_bg
+    }
+    result = await apost_api(url, data)
     return result
 
 async def song_meta(
@@ -124,7 +147,7 @@ async def song_meta(
         default_servers: 默认服务器编号[主,副]  如: [3,0]  范围: 0-4
         server:          服务器id              如: 3      范围: 0-4
     返回:
-        dict: ["base64","xxxxxxxxxxx"]
+        list[dict]: [{"type": "base64/string", "string": "xxxxx"}]
     """
     url = f"{config.api_base}/songMeta"
     data = {
@@ -132,7 +155,7 @@ async def song_meta(
         "server": server,
         "compress": config.compress
     }
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     return result
 
 async def search_character(
@@ -146,7 +169,7 @@ async def search_character(
         default_servers: 默认服务器编号[主,副]  如: [3,0]  范围: 0-4
         characterName:   角色名称              如: otae
     返回:
-        dict: ["base64","xxxxxxxxxxx"]
+        list[dict]: [{"type": "base64/string", "string": "xxxxx"}]
     """
     url = f"{config.api_base}/searchCharacter"
     data = {
@@ -154,7 +177,7 @@ async def search_character(
         "text": characterName,
         "compress": config.compress
     }
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     return result
 
 async def song_chart(
@@ -179,7 +202,7 @@ async def song_chart(
         "difficultyText": difficulty,
         "compress": config.compress
     }
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     return result
 
 async def ycx_all(
@@ -202,7 +225,7 @@ async def ycx_all(
     }
     if eventId:
         data["eventId"] = eventId
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     return result
 
 async def ycx(
@@ -228,7 +251,7 @@ async def ycx(
     }
     if eventId:
         data["eventId"] = eventId
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     return result
 
 async def lsycx(
@@ -254,7 +277,7 @@ async def lsycx(
     }
     if eventId:
         data["eventId"] = eventId
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     return result
 
 async def room_list(
@@ -275,7 +298,7 @@ async def room_list(
         "compress": config.compress
     }
     print(data)
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     print(result)
     return result
 
@@ -284,11 +307,23 @@ async def query_allRoom():
     说明:
         从车站获取全部车牌
     返回:
-        dict[list]: 
-        如{status: data:[{"number": 234211,"rawMessage": "234211 测试q1","source": "BandoriStation","userId": xxx,"time": xxx,"avanter": "","userName": ""}]}
+        dict
+        例{
+            "status":"success",
+            "data":[
+                {
+                    "number": 234211,
+                    "rawMessage": "234211 测试q1",
+                    "source": "BandoriStation",
+                    "userId": xxx,"time": xxx,
+                    "avanter": "",
+                    "userName": ""
+                }
+            ]
+        }
     """
     url = f"{config.api_base}/station/queryAllRoom"
-    result = await a_get_data_from_backend_get(url)
+    result = await aget_api(url)
     return result
 
 async def submit_room_number(
@@ -308,7 +343,7 @@ async def submit_room_number(
         user_id:      用户id    如: 2461673400
         userName:     用户名    如: otae
     返回:
-        dict: {"status": "suc", "data": [xxxxx]}
+        dict: {"status": "success", "data": [xxxxx]}
     """
     url = f"{config.api_base}/station/submitRoomNumber"
     data = {
@@ -320,7 +355,7 @@ async def submit_room_number(
         "time": int(time.time()),
         "bandoriStationToken": config.bandori_station_token
     }
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     return result
 
 async def search_card(
@@ -343,7 +378,7 @@ async def search_card(
         "useEasyBG": config.use_easy_bg,
         "compress": config.compress
     }
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     return result
 
 async def get_user_data(
@@ -364,7 +399,7 @@ async def get_user_data(
         "platform": platform,
         "user_id": user_id
     }
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     return result
 
 async def bind_player_request(
@@ -391,7 +426,7 @@ async def bind_player_request(
         "server": server,
         "bindType": bindType
     }
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     return result
 
 async def bind_player_verification(
@@ -421,7 +456,7 @@ async def bind_player_verification(
         "playerId": playerId,
         "bindType": bindType
     }
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     return result
 
 async def set_server_mode(
@@ -445,7 +480,7 @@ async def set_server_mode(
         "user_id": user_id,
         "text": text
     }
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     return result
 
 async def set_car_forwarding(
@@ -467,7 +502,7 @@ async def set_car_forwarding(
         "user_id": user_id,
         "status": status
     }
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     return result
 
 async def set_default_server(
@@ -491,14 +526,8 @@ async def set_default_server(
         "user_id": user_id,
         "text": text
     }
-    result = await a_get_data_from_backend(url, data)
+    result = await apost_api(url, data)
     return result
-
-
-
-
-
-
 
 async def ycm():
     """

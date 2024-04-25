@@ -23,7 +23,7 @@ class Config:
     car_config: dict                    # 车牌配置
 
     def __init__(self):
-        configJson = openJson(f"{Path(__file__).parent}/config.json")
+        configJson = open_json(f"{Path(__file__).parent}/config.json")
         self.api_base = configJson["api_base"]
         self.use_easy_bg = bool(configJson["use_easy_bg"])
         self.compress = bool(configJson["compress"])
@@ -40,6 +40,26 @@ class Config:
         self.enable_carNum_prompt_groups = configJson["enable_carNum_prompt_groups"]
         self.cmd_list = configJson["cmd_list"]
         self.car_config = configJson["car_config"]
+
+    def save(self):
+        data = {
+            "api_base": self.api_base,
+            "use_easy_bg": self.use_easy_bg,
+            "compress": self.compress,
+            "default_servers": self.default_servers,
+            "bot_name": self.bot_name,
+            "bandori_station_token": self.bandori_station_token,
+            "token_name": self.token_name,
+            "api_use_proxy": self.api_use_proxy,
+            "submit_car_number_use_proxy": self.submit_car_number_use_proxy,
+            "proxy_url": self.proxy_url,
+            "server_list": self.server_list,
+            "ban_gacha_simulate_group_data": self.ban_gacha_simulate_group_data,
+            "enable_carNum_prompt_groups": self.enable_carNum_prompt_groups,
+            "cmd_list": self.cmd_list,
+            "car_config": self.car_config
+        }
+        save_json(f"{Path(__file__).parent}/config.json", data)
 
 
 class User:
@@ -79,9 +99,16 @@ class User:
         self.car = car
         self.server_list = server_list
 
+def save_json(path, data) -> bool:
+    try:
+        with open(path, "w", encoding="UTF-8") as file:
+            json.dump(data, file, indent=4)
+        return True
+    except Exception as e:
+        print(e)
+        return False
 
-
-def openJson(path) -> dict | None:
+def open_json(path) -> dict | None:
     try:
         with open(path, "r", encoding="UTF-8") as file:
             data = json.load(file)
