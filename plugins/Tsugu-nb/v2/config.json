@@ -26,23 +26,23 @@
 
 
     "cmd_list": [
-        {"api": "getCardIllustration", "command_name": ["/查插画", "/查卡面", "/卡面", "/km"],"ifEnable":"True","name":"查询卡面"},
-        {"api": "gachaSimulate", "command_name": ["/抽卡模拟", "/卡池模拟","/抽卡"],"ifEnable":"True","name":"抽卡模拟"},
-        {"api": "searchGacha", "command_name": ["/查卡池","/查询卡池","/ckc","cxkc"],"ifEnable":"True","name":"查询卡池"},
-        {"api": "searchEvent", "command_name": ["/查活动", "/查询活动", "/chd"],"ifEnable":"True","name":"查询活动"},
-        {"api": "searchSong", "command_name": ["/查歌曲", "/查曲","/cq","/cgq","/song"],"ifEnable":"True","name":"查询歌曲"},
-        {"api": "songMeta", "command_name": ["/查询分数表", "/查分数表","/分数表","/fsb","score"],"ifEnable":"True","name":"查询歌曲分数表"},
-        {"api": "searchCharacter", "command_name": ["/查角色","/查询角色","/cjs","/cxjs"],"ifEnable":"True","name":"查询角色"},
-        {"api": "songChart", "command_name": ["/查铺面", "/查谱面","/pm","/cpm"],"ifEnable":"True","name":"查询铺面"},
-        {"api": "ycxAll", "command_name": ["/ycxall", "/ycx all","/全档预测线", "/全档预测"],"ifEnable":"True","name":"全部预测线"},
-        {"api": "ycx", "command_name": ["/ycx", "/预测线"],"ifEnable":"True","name":"预测线"},
-        {"api": "lsycx", "command_name": ["/lsycx","/历史预测线"],"ifEnable":"True","name":"历史预测线"},
-        {"api": "station/queryAllRoom", "command_name": ["/ycm", "/车来"],"ifEnable":"True","name":"查询车牌"},
-        {"api": "searchCard", "command_name": ["/查卡","/ck"],"ifEnable":"True","name":"查询卡牌"},
-        {"api": "user/bindPlayerRequest", "command_name": ["/绑定玩家","/bdwj","/bindplayer"],"ifEnable":"True","name":"绑定玩家"},
-        {"api": "", "command_name": ["/玩家状态","/wjzt","/playerinfo","/info"],"ifEnable":"True","name":"玩家信息"},
-        {"api": "searchPlayer", "command_name": ["/查玩家","/查询玩家","/cwj","/cxwj","/queryplayer"],"ifEnable":"True","name":"查询玩家"},
-        {"api": "user/bindPlayerVerification", "command_name": ["/验证","/绑定验证","/验证绑定","/yz","/bdyz","/yzbd"],"ifEnable":"True","name":"验证绑定"}
+        {"command_name": ["查插画", "查卡面", "卡面", "km"],"ifEnable":"True","name":"查询卡面"},
+        {"command_name": ["抽卡模拟", "卡池模拟","抽卡"],"ifEnable":"True","name":"抽卡模拟"},
+        {"command_name": ["查卡池","查询卡池","ckc","cxkc"],"ifEnable":"True","name":"查询卡池"},
+        {"command_name": ["查活动", "查询活动", "chd"],"ifEnable":"True","name":"查询活动"},
+        {"command_name": ["查歌曲", "查曲","cq","cgq","song"],"ifEnable":"True","name":"查询歌曲"},
+        {"command_name": ["查询分数表", "查分数表","分数表","fsb","score"],"ifEnable":"True","name":"查询歌曲分数表"},
+        {"command_name": ["查角色","查询角色","cjs","cxjs"],"ifEnable":"True","name":"查询角色"},
+        {"command_name": ["查铺面", "查谱面","pm","cpm"],"ifEnable":"True","name":"查询铺面"},
+        {"command_name": ["ycxall", "ycx all","全档预测线", "全档预测"],"ifEnable":"True","name":"全部预测线"},
+        {"command_name": ["ycx", "预测线"],"ifEnable":"True","name":"预测线"},
+        {"command_name": ["lsycx","历史预测线"],"ifEnable":"True","name":"历史预测线"},
+        {"command_name": ["ycm", "车来", "有车吗"],"ifEnable":"True","name":"查询车牌"},
+        {"command_name": ["查卡","ck"],"ifEnable":"True","name":"查询卡牌"},
+        {"command_name": ["绑定玩家","bdwj","bindplayer"],"ifEnable":"True","name":"绑定玩家"},
+        {"command_name": ["玩家状态","wjzt","playerinfo","info"],"ifEnable":"True","name":"玩家信息"},
+        {"command_name": ["查玩家","查询玩家","cwj","cxwj","queryplayer"],"ifEnable":"True","name":"查询玩家"},
+        {"command_name": ["验证","绑定验证","验证绑定","yz","bdyz","yzbd"],"ifEnable":"True","name":"验证绑定"}
     ],
 
     "car_config":{
