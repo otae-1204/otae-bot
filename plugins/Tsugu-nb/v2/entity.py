@@ -66,8 +66,8 @@ class User:
     _id: str
     user_id: str
     platform: str
-    serverMode: int
-    defaultServer: list[int]
+    server_mode: int
+    default_server: list[int]
     car: bool
     server_list: list[dict]
 
@@ -76,8 +76,8 @@ class User:
         _id: str,
         user_id: str,
         platform: str,
-        serverMode: int,
-        defaultServer: list[int],
+        server_mode: int,
+        default_server: list[int],
         car: bool,
         server_list: list[dict]
     ):
@@ -86,16 +86,16 @@ class User:
             _id (str): 唯一id
             user_id (str): 用户ID
             platform (str): 平台
-            serverMode (int): 服务器模式
-            defaultServer (list[int]): 默认服务器
+            server_mode (int): 服务器模式
+            default_server (list[int]): 默认服务器
             car (str): 是否开启车牌转发
             server_list (list[dict]): 服务器列表
         """
         self._id = _id
         self.user_id = user_id
         self.platform = platform
-        self.serverMode = serverMode
-        self.defaultServer = defaultServer
+        self.server_mode = server_mode
+        self.default_server = default_server
         self.car = car
         self.server_list = server_list
 

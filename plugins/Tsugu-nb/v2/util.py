@@ -1,5 +1,5 @@
 import json,re,httpx
-from entity import Config,User
+from .entity import Config,User
 
 config = Config()
 
@@ -36,20 +36,27 @@ def is_car(message: str) -> bool:
 
     return is_car
 
-def is_command(message: str) -> bool:
+def is_command(message: str):
     """判断消息是否为命令
 
     Args:
         message (str): 用户发送的消息
 
     Returns:
-        bool: 是否为命令
+        dict: 是否为命令
     """
     for cmd in config.cmd_list:
         for key in cmd["command_name"]:
             if message.startswith(key) and bool(cmd["ifEnable"]):
-                return True
-    return False
+                message = message.replace(key, "").lstrip()
+                return {"status": True, "command": cmd["name"], "message": message}
+    return {"status": False, "command": None, "message": message}
+
+def get_server_index(server_name: str):
+    for i in config.server_list:
+        if server_name.strip() in config.server_list[i]:
+            return int(i)
+    return None
 
 
 async def apost_api(api: str, data: dict) -> dict:
@@ -64,8 +71,7 @@ async def apost_api(api: str, data: dict) -> dict:
     """
     try:
     # data = json.dumps(data)
-        print("请求数据")
-        print(data)
+        print(f"请求API为{api}\n,请求数据为{data}")
         async with httpx.AsyncClient(
             proxies=config.proxy_url if config.api_use_proxy else None,
             timeout=60,
