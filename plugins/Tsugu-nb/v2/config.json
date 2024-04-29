@@ -26,7 +26,7 @@
 
 
     "cmd_list": [
-        {"command_name": ["查插画", "查卡面", "卡面", "km"],"ifEnable":"True","name":"查询卡面"},
+        {"command_name": ["查插画", "查卡面", "卡面", "km", "ckm"],"ifEnable":"True","name":"查询卡面"},
         {"command_name": ["抽卡模拟", "卡池模拟","抽卡"],"ifEnable":"True","name":"抽卡模拟"},
         {"command_name": ["查卡池","查询卡池","ckc","cxkc"],"ifEnable":"True","name":"查询卡池"},
         {"command_name": ["查活动", "查询活动", "chd"],"ifEnable":"True","name":"查询活动"},
@@ -42,7 +42,8 @@
         {"command_name": ["绑定玩家","bdwj","bindplayer"],"ifEnable":"True","name":"绑定玩家"},
         {"command_name": ["玩家状态","wjzt","playerinfo","info"],"ifEnable":"True","name":"玩家信息"},
         {"command_name": ["查玩家","查询玩家","cwj","cxwj","queryplayer"],"ifEnable":"True","name":"查询玩家"},
-        {"command_name": ["验证","绑定验证","验证绑定","yz","bdyz","yzbd"],"ifEnable":"True","name":"验证绑定"}
+        {"command_name": ["验证","绑定验证","验证绑定","yz","bdyz","yzbd"],"ifEnable":"True","name":"验证绑定"},
+        {"command_name": ["设置默认服务器","默认服务器","setdefaultserver","设定默认服务器"],"ifEnable":"True","name":"设置默认服务器"}
     ],
 
     "car_config":{

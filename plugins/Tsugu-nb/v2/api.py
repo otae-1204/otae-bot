@@ -1,5 +1,5 @@
-from util import *
-from entity import Config
+from .util import *
+from .entity import Config
 import time
 
 config = Config()
@@ -142,7 +142,7 @@ async def song_meta(
 ):
     """
     说明:
-        查询歌曲Meta
+        查询歌曲分数表
     参数:
         default_servers: 默认服务器编号[主,副]  如: [3,0]  范围: 0-4
         server:          服务器id              如: 3      范围: 0-4
@@ -182,8 +182,8 @@ async def search_character(
 
 async def song_chart(
     default_servers: list[int],
-    songName: int,
-    difficulty: int,
+    songId: int,
+    difficulty: str,
 ):
     """
     说明:
@@ -198,7 +198,7 @@ async def song_chart(
     url = f"{config.api_base}/songChart"
     data = {
         "default_servers": default_servers,
-        "songId": songName,
+        "songId": songId,
         "difficultyText": difficulty,
         "compress": config.compress
     }
