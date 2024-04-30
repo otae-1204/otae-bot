@@ -52,8 +52,11 @@ async def _(event: Event):
             case "查询角色":
                 result = await search_character(user.default_server, command["message"])
             case "查询铺面":
-                song_id = int(command["message"].split(" ")[0])
-                difficulty = command["message"].split(" ")[1]
+                # song_id = int(command["message"].split(" ")[0])
+                song_id = re.findall(r"\d+", command["message"])[0] if re.findall(r"\d+", command["message"]) else None
+                difficulty = command["message"].replace(song_id,"").strip() if song_id else None
+                if difficulty == "":
+                    difficulty = "ex"
                 result = await song_chart(user.default_server,song_id,difficulty)
             case "全部预测线":
                 # msgs = command["message"].split(" ")
@@ -65,7 +68,54 @@ async def _(event: Event):
                 else:
                     result = await ycx_all(3,event_id)
             case "预测线":
-                ...
+                print(command["message"])
+                if command["message"].endswith(tuple(server_list_name)):
+                    server_index = get_server_index(command["message"][-2:])
+                    msg = command["message"][:-2].rsplit()
+                if command["message"].startswith(tuple(server_list_name)):
+                    server_index = get_server_index(command["message"][:2])
+                    msg = command["message"][2:].lstrip()
+                print(f"server_index:{server_index}")
+                print(f"msg:{msg},type:{type(msg)}")
+                if type(msg) == str:
+                    msgs = msg.split(" ")
+                else:
+                    msgs = msg
+                print(f"msgs:{msgs}")
+                tier = int(msgs[0])
+                print(f"tier:{tier}")
+                if len(msgs) == 1:
+                    print(f"请求数据为:{server_index},{tier}")
+                    result = await ycx(server_index,tier)
+                else:
+                    print(f"请求数据为:{server_index},{tier},{int(msgs[1])}")
+                    result = await ycx(server_index,tier,int(msgs[1]))
+            case "历史预测线":
+                print(command["message"])
+                if command["message"].endswith(tuple(server_list_name)):
+                    server_index = get_server_index(command["message"][-2:])
+                    msg = command["message"][:-2].rsplit()
+                if command["message"].startswith(tuple(server_list_name)):
+                    server_index = get_server_index(command["message"][:2])
+                    msg = command["message"][2:].lstrip()
+                print(f"server_index:{server_index}")
+                print(f"msg:{msg},type:{type(msg)}")
+                if type(msg) == str:
+                    msgs = msg.split(" ")
+                else:
+                    msgs = msg
+                print(f"msgs:{msgs}")
+                tier = int(msgs[0])
+                print(f"tier:{tier}")
+                if len(msgs) == 1:
+                    print(f"请求数据为:{server_index},{tier}")
+                    result = await lsycx(server_index,tier)
+                else:
+                    print(f"请求数据为:{server_index},{tier},{int(msgs[1])}")
+                    result = await lsycx(server_index,tier,int(msgs[1]))
+            
+                
+                
     except Exception as e:
         print(e)
         result = [{"type": "string", "string": "参数错误"}]
