@@ -23,6 +23,7 @@ async def _(event: Event):
     msgid = event.get_event_description().split(" ")[1]
     start_time = time.time()
 
+
     if msg == "" or (msg[0] not in command_starts if len(command_starts) != 0 else 1):
         return
 
@@ -136,11 +137,42 @@ async def _(event: Event):
                 msg = " ".join(msg) if type(msg) == list else msg
 
                 result = await search_card(server_index_list, msg)
+            case "绑定玩家":
+                # Todo:绑定玩家
+                server_mode = get_server_index(command["message"]) if command["message"].endswith(tuple(server_list_name)) else 3
+                result = await bind_player_request("onebot", event.get_user_id(), True, server_mode)
+                await Tsugu.finish(MessageSegment.reply(msgid) + f"请将游戏内签名更改为 {result['data']['verifyCode']} 后发送 /验证+玩家ID 进行验证")
+            case "解绑玩家":
+                # Todo:解绑玩家
+                server_mode = get_server_index(command["message"]) if command["message"].endswith(tuple(server_list_name)) else 3
+                result = await bind_player_request("onebot", event.get_user_id(), False, server_mode)
+                # print(result)
+                await Tsugu.finish(MessageSegment.reply(msgid) + f"请将游戏内签名更改为 {result['data']['verifyCode']} 后发送 /验证+玩家ID 进行验证")
+            case "验证":
+                server_mode = get_server_index(command["message"]) if command["message"].endswith(tuple(server_list_name)) else 3
+                player_id = int(command["message"])
+                result = [{"type": "string", "string": (await bind_player_verification("onebot", event.get_user_id(), player_id, True, server_mode))['data']}]
+            case "玩家信息":
+                server_mode = get_server_index(command["message"]) if command["message"].endswith(tuple(server_list_name)) else 3
+                result = await search_player(user.server_list[server_mode]["playerId"], server_mode) if user.server_list[server_mode]["playerId"] != 0 else [{"type": "string", "string": "未绑定玩家,请先绑定"}]
+            case "查询玩家":
+                server_mode = 3
+                player_id = command["message"]
+                if command["message"].endswith(tuple(server_list_name)):
+                    server_mode = get_server_index(command["message"][-2:])
+                    player_id = command["message"][:-2].rsplit()
+                if command["message"].startswith(tuple(server_list_name)):
+                    server_mode = get_server_index(command["message"][:2])
+                    player_id = command["message"][2:].lstrip()
+                result = await search_player(player_id, server_mode)
+
 
     except Exception as e:
         print(e)
         result = [{"type": "string", "string": "参数错误"}]
 
+    # print(result)
+    
     if len(result) == 1:
         if "type" in result[0] and result[0]["type"] == "string":
             await Tsugu.finish(MessageSegment.reply(msgid) + result[0]["string"])
@@ -149,7 +181,7 @@ async def _(event: Event):
             # print(f"[图像大小: {len(base) / 1024:.2f}KB]") if isinstance(base, bytes) else None
             await Tsugu.finish(MessageSegment.at(event.get_user_id()) + MessageSegment.image(base if "base64://" in base else "base64://" + base) + f"\n[本次用时{round(time.time() - start_time, 2)}秒]")
     elif len(result) > 1:
-        await Tsugu.send(MessageSegment.at(event.get_user_id())+"信息过多,将分段输出")
+        # await Tsugu.send(MessageSegment.at(event.get_user_id())+"信息过多,将分段输出")
         print(f"信息过多,将分段输出,共{len(result)}段")
         # print(result)
         num = 0
@@ -162,4 +194,4 @@ async def _(event: Event):
                 # print(f"[图像大小: {len(base) / 1024:.2f}KB]") if isinstance(base, bytes) else None
                 # 当最后一次循环的时候执行用时,不是最后一次则不输出执行用时
                 await Tsugu.send(MessageSegment.at(event.get_user_id()) + MessageSegment.image(base if "base64://" in base else "base64://" + base)) if num != len(result) else \
-                    await Tsugu.finish(MessageSegment.at(event.get_user_id()) + MessageSegment.image(base if "base64://" in base else "base64://" + base) + f"\n[本次用时{round(time.time() - start_time, 2)}秒]")
+await Tsugu.finish(MessageSegment.at(event.get_user_id()) + MessageSegment.image(base if "base64://" in base else "base64://" + base) + f"\n[本次用时{round(time.time() - start_time, 2)}秒]")
