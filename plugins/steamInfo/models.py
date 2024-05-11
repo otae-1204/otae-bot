@@ -18,6 +18,7 @@ class Player(TypedDict):
     timecreated: int
     personastateflags: int
     nickname: str = None
+    update_time: int = 0
     # gameextrainfo: str
     # gameid: str
 
