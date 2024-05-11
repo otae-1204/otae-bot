@@ -2,26 +2,67 @@ import time
 import aiohttp
 import calendar
 from io import BytesIO
+from pathlib import Path
 from typing import List, Dict
 from PIL import Image, ImageDraw, ImageFont
-from .config import imgpath,fontpath
-
 from .models import Player
+from configs.path_config import IMAGE_PATH, FONT_PATH
+import base64
 
 WIDTH = 400
 PARENT_AVATAR_SIZE = 72
 MEMBER_AVATAR_SIZE = 50
 
+unknown_avatar_path =  f"{IMAGE_PATH}/steamInfo/unknown_avatar.jpg"
+parent_status_path =  f"{IMAGE_PATH}/steamInfo/parent_status.png"
+friends_search_path =  f"{IMAGE_PATH}/steamInfo/friends_search.png"
+busy_path =  f"{IMAGE_PATH}/steamInfo/busy.png"
+zzz_online_path =  f"{IMAGE_PATH}/steamInfo/zzz_online.png"
+zzz_gaming_path =  f"{IMAGE_PATH}/steamInfo/zzz_gaming.png"
+gaming_path =  f"{IMAGE_PATH}/steamInfo/gaming.png"
+
+font_regular_path = Path(f"{FONT_PATH}/steamInfo/MiSans-Regular.ttf").resolve().__str__()
+font_light_path = Path(f"{FONT_PATH}/steamInfo/MiSans-Light.ttf").resolve().__str__()
+font_bold_path = Path(f"{FONT_PATH}/steamInfo/MiSans-Bold.ttf").resolve().__str__()
+
+
+def check_font():
+    if not Path(font_regular_path).exists():
+        raise FileNotFoundError(f"Font file {font_regular_path} not found.")
+    if not Path(font_light_path).exists():
+        raise FileNotFoundError(f"Font file {font_light_path} not found.")
+    if not Path(font_bold_path).exists():
+        raise FileNotFoundError(f"Font file {font_bold_path} not found.")
+
+
+async def _fetch_avatar(avatar_url: str, proxy: str = None) -> Image.Image:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(avatar_url, proxy=proxy) as resp:
+            if resp.status != 200:
+                return Image.open(unknown_avatar_path)
+            return Image.open(BytesIO(await resp.read()))
+
+
+async def fetch_avatar(player: Player, avatar_dir: Path, proxy: str = None) -> Image.Image:
+    if avatar_dir is not None:
+        avatar_path = Path(avatar_dir + f"avatar_{player['steamid']}.png")
+
+        if avatar_path.exists():
+            avatar = Image.open(avatar_path)
+        else:
+            avatar = await _fetch_avatar(player["avatarfull"], proxy)
+
+            avatar.save(avatar_path)
+    else:
+        avatar = await _fetch_avatar(player["avatarfull"], proxy)
+    
+    return avatar
+
 
 async def simplize_steam_player_data(
-    player: Player, proxy: str = None, nickname: str = None
+    player: Player, proxy: str = None, avatar_dir: Path = None
 ) -> Dict[str, str]:
-    async with aiohttp.ClientSession() as session:
-        async with session.get(player["avatarfull"], proxy=proxy) as resp:
-            if resp.status != 200:
-                avatar = Image.open(f"{imgpath}unknown_avatar.jpg")
-            else:
-                avatar = Image.open(BytesIO(await resp.read()))
+    avatar = await fetch_avatar(player, avatar_dir, proxy)
 
     if player["personastate"] == 0:
         if not player.get("lastlogoff"):
@@ -42,51 +83,29 @@ async def simplize_steam_player_data(
                 status = f"上次在线 {time_to_now // 2592000} 个月前"
             else:
                 status = f"上次在线 {time_to_now // 31536000} 年前"
-    elif player["personastate"] == 1:
+    elif player["personastate"] in [1, 2, 4]:
         status = (
-            "在线"
-            if player.get("gameextrainfo") is None
-            else player["gameextrainfo"]
-        )
-    elif player["personastate"] == 2:
-        status = (
-            "在线"
-            if player.get("gameextrainfo") is None
-            else player["gameextrainfo"]
+            "在线" if player.get("gameextrainfo") is None else player["gameextrainfo"]
         )
     elif player["personastate"] == 3:
         status = (
-            "离开"
-            if player.get("gameextrainfo") is None
-            else player["gameextrainfo"]
+            "离开" if player.get("gameextrainfo") is None else player["gameextrainfo"]
         )
-    elif player["personastate"] == 4:
-        status = (
-            "在线"
-            if player.get("gameextrainfo") is None
-            else player["gameextrainfo"]
-        )
-    elif player["personastate"] == 5:
-        status = "在线"
-    elif player["personastate"] == 6:
+    elif player["personastate"] in [5, 6]:
         status = "在线"
     else:
         status = "未知"
+
+    nickname = player["personaname"]
+    if player["nickname"] and player["nickname"] != player["personaname"] and player["nickname"].strip() != "":
+        nickname = "*" + player["nickname"]
     
-    if nickname is not None:
-        return {
+    return {
         "avatar": avatar,
-        "name": f"*{nickname}",
+        "name": nickname,
         "status": status,
         "personastate": player["personastate"],
     }
-    else:
-        return {
-            "avatar": avatar,
-            "name": player["personaname"],
-            "status": status,
-            "personastate": player["personastate"],
-        }
 
 
 def image_to_bytes(image: Image.Image) -> bytes:
@@ -109,13 +128,52 @@ personastate_colors = {
     6: (hex_to_rgb("6dcef5"), hex_to_rgb("4c91ac")),
 }
 
+# 将Image.Image对象转换成base64编码，格式为标准base64格式
+def image_to_base64(img: Image.Image) -> str:
+    bio = BytesIO()
+    img.save(bio, format="PNG")
+    base64_str = base64.b64encode(bio.getvalue()).decode()
+    return base64_str
+
+
+def vertically_concatenate_images(images: List[Image.Image]) -> Image.Image:
+    widths, heights = zip(*(i.size for i in images))
+    total_width = max(widths)
+    total_height = sum(heights)
+
+    new_image = Image.new("RGB", (total_width, total_height))
+
+    y_offset = 0
+    for image in images:
+        new_image.paste(image, (0, y_offset))
+        y_offset += image.size[1]
+
+    return new_image
+
+
+def draw_start_gaming(avatar: Image.Image, friend_name: str, game_name: str):
+    canvas = Image.open(gaming_path)
+    canvas.paste(avatar.resize((66, 66), Image.BICUBIC), (15, 20))
+
+    # 绘制名称
+    draw = ImageDraw.Draw(canvas)
+    draw.text((104, 14), friend_name, font=ImageFont.truetype(font_regular_path, 19), fill=hex_to_rgb("e3ffc2"))
+
+    # 绘制"正在玩"
+    draw.text((103, 42), "正在玩", font=ImageFont.truetype(font_regular_path, 17), fill=hex_to_rgb("969696"))
+
+    # 绘制游戏名称
+    draw.text((104, 66), game_name, font=ImageFont.truetype(font_bold_path, 14), fill=hex_to_rgb("91c257"))
+
+    return canvas
+
 
 def draw_parent_status(parent_avatar: Image.Image, parent_name: str) -> Image.Image:
     parent_avatar = parent_avatar.resize(
         (PARENT_AVATAR_SIZE, PARENT_AVATAR_SIZE), Image.BICUBIC
     )
 
-    canvas = Image.open(f"{imgpath}parent_status.png").resize((WIDTH, 120), Image.BICUBIC)
+    canvas = Image.open(parent_status_path).resize((WIDTH, 120), Image.BICUBIC)
 
     draw = ImageDraw.Draw(canvas)
 
@@ -127,7 +185,7 @@ def draw_parent_status(parent_avatar: Image.Image, parent_name: str) -> Image.Im
     draw.text(
         (16 + PARENT_AVATAR_SIZE + 16, avatar_height + 12),
         parent_name,
-        font=ImageFont.truetype(f"{fontpath}msyhbd.ttc", 20),
+        font=ImageFont.truetype(font_bold_path, 20),
         fill=hex_to_rgb("6dcff6"),
     )
 
@@ -135,7 +193,7 @@ def draw_parent_status(parent_avatar: Image.Image, parent_name: str) -> Image.Im
     draw.text(
         (16 + PARENT_AVATAR_SIZE + 16, avatar_height + 20 + 16),
         "在线",
-        font=ImageFont.truetype(f"{fontpath}msyhl.ttc", 18),
+        font=ImageFont.truetype(font_light_path, 18),
         fill=hex_to_rgb("4c91ac"),
     )
 
@@ -145,7 +203,7 @@ def draw_parent_status(parent_avatar: Image.Image, parent_name: str) -> Image.Im
 def draw_friends_search() -> Image.Image:
     canvas = Image.new("RGB", (WIDTH, 50), hex_to_rgb("434953"))
 
-    friends_search = Image.open(f"{imgpath}friends_search.png")
+    friends_search = Image.open(friends_search_path)
 
     canvas.paste(friends_search, (WIDTH - friends_search.width, 0))
 
@@ -155,7 +213,7 @@ def draw_friends_search() -> Image.Image:
         (24, 10),
         "好友",
         hex_to_rgb("b7ccd5"),
-        font=ImageFont.truetype(f"{fontpath}msyh.ttc", 20),
+        font=ImageFont.truetype(font_regular_path, 20),
     )
 
     return canvas
@@ -177,12 +235,10 @@ def draw_friend_status(
         canvas = draw_friend_status(friend_avatar, friend_name, status, 1)
         draw = ImageDraw.Draw(canvas)
 
-        busy = Image.open(f"{imgpath}busy.png")
+        busy = Image.open(busy_path)
 
         name_width = int(
-            draw.textlength(
-                friend_name, font=ImageFont.truetype(f"{fontpath}msyhbd.ttc", 20)
-            )
+            draw.textlength(friend_name, font=ImageFont.truetype(font_bold_path, 20))
         )
 
         canvas.paste(busy, (22 + MEMBER_AVATAR_SIZE + 16 + name_width + 4, 18))
@@ -194,14 +250,10 @@ def draw_friend_status(
         canvas = draw_friend_status(friend_avatar, friend_name, status, 1)
         draw = ImageDraw.Draw(canvas)
 
-        zzz = Image.open(
-            f"{imgpath}zzz_online.png" if status == "在线" else f"{imgpath}zzz_gaming.png"
-        )
+        zzz = Image.open(zzz_online_path if status == "在线" else zzz_gaming_path)
 
         name_width = int(
-            draw.textlength(
-                friend_name, font=ImageFont.truetype(f"{fontpath}msyhbd.ttc", 20)
-            )
+            draw.textlength(friend_name, font=ImageFont.truetype(font_bold_path, 20))
         )
 
         canvas.paste(zzz, (22 + MEMBER_AVATAR_SIZE + 16 + name_width + 8, 18))
@@ -222,7 +274,7 @@ def draw_friend_status(
     draw.text(
         (22 + MEMBER_AVATAR_SIZE + 18, 12),
         friend_name,
-        font=ImageFont.truetype(f"{fontpath}msyhbd.ttc", 20),
+        font=ImageFont.truetype(font_bold_path, 20),
         fill=fill[0],
     )
 
@@ -230,7 +282,7 @@ def draw_friend_status(
     draw.text(
         (22 + MEMBER_AVATAR_SIZE + 16, 36),
         status,
-        font=ImageFont.truetype(f"{fontpath}msyh.ttc", 18),
+        font=ImageFont.truetype(font_regular_path, 18),
         fill=fill[1],
     )
 
@@ -251,7 +303,7 @@ def draw_gaming_friends_status(data: List[Dict[str, str]]) -> Image.Image:
         (22, 22),
         "游戏中",
         hex_to_rgb("c5d6d4"),
-        font=ImageFont.truetype(f"{fontpath}msyh.ttc", 22),
+        font=ImageFont.truetype(font_regular_path, 22),
     )
 
     # 绘制好友头像和名称
@@ -281,7 +333,7 @@ def draw_online_friends_status(data: List[Dict[str, str]]) -> Image.Image:
         (22, 22),
         "在线好友",
         hex_to_rgb("c5d6d4"),
-        font=ImageFont.truetype(f"{fontpath}msyh.ttc", 22),
+        font=ImageFont.truetype(font_regular_path, 22),
     )
 
     # 绘制在线人数
@@ -289,7 +341,7 @@ def draw_online_friends_status(data: List[Dict[str, str]]) -> Image.Image:
         (115, 25),
         f"({len(data)})",
         hex_to_rgb("67665c"),
-        font=ImageFont.truetype(f"{fontpath}msyh.ttc", 18),
+        font=ImageFont.truetype(font_regular_path, 18),
     )
 
     # 绘制好友头像和名称
@@ -319,7 +371,7 @@ def draw_offline_friends_status(data: List[Dict[str, str]]) -> Image.Image:
         (22, 22),
         "离线",
         hex_to_rgb("c5d6d4"),
-        font=ImageFont.truetype(f"{fontpath}msyh.ttc", 22),
+        font=ImageFont.truetype(font_regular_path, 22),
     )
 
     # 绘制离线人数
@@ -327,7 +379,7 @@ def draw_offline_friends_status(data: List[Dict[str, str]]) -> Image.Image:
         (72, 25),
         f"({len(data)})",
         hex_to_rgb("67665c"),
-        font=ImageFont.truetype(f"{fontpath}msyh.ttc", 18),
+        font=ImageFont.truetype(font_regular_path, 18),
     )
 
     # 绘制好友头像和名称

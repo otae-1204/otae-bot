@@ -9,17 +9,19 @@ from nonebot.adapters.onebot.v11 import Bot
 from nonebot.adapters.onebot.v11.event import GroupMessageEvent
 from nonebot.adapters.onebot.v11.message import MessageSegment, Message
 from nonebot.permission import SUPERUSER
-import re
-from utils.logs import LogUtils
+import re,time
+from utils.message_builder import image as imgMsg
+from configs.path_config import IMAGE_PATH
+from configs.config import SYSTEM_PROXY
 require("nonebot_plugin_apscheduler")
 
 from nonebot_plugin_apscheduler import scheduler
 
 from .config import Config
-from .models import PlayerSummaries
+from .models import PlayerSummaries, Player
 from .data_source import BindData, SteamInfoData, ParentData
 from .steam import get_steam_id, get_steam_users_info, STEAM_ID_OFFSET
-from .draw import draw_friends_status, simplize_steam_player_data, image_to_bytes
+from .draw import draw_friends_status, simplize_steam_player_data, image_to_base64, draw_start_gaming, fetch_avatar, vertically_concatenate_images
 
 # logs = LogUtils("steamInfo")
 bind = on_command("steambind", aliases={"绑定steam"}, priority=1)
@@ -29,6 +31,10 @@ update_parent_info = on_command("steamupdate", priority=1)
 add = on_command("addsteambind",aliases={"添加Steam绑定"}, priority=1, permission=SUPERUSER)
 setname = on_command("setname",aliases={"设置昵称"}, priority=1)
 setusername = on_command("setusername",aliases={"设置用户昵称"}, priority=1, permission=SUPERUSER)
+unbind = on_command("steamunbind",aliases={"解绑steam"}, priority=1)
+unbinduser = on_command("steamunbinduser",aliases={"解绑用户"}, priority=1, permission=SUPERUSER)
+delname = on_command("delname",aliases={"删除昵称"}, priority=1)
+delusername = on_command("delusername",aliases={"删除用户昵称"}, priority=1, permission=SUPERUSER)
 
 
 if hasattr(nonebot, "get_plugin_config"):
@@ -47,57 +53,106 @@ parent_data = ParentData("data/steam_info")
 async def broadcast_steam_info(parent_id: str, steam_info: PlayerSummaries):
     bot: Bot = nonebot.get_bot()
 
-    msg = steam_info_data.compare(parent_id, steam_info["response"])
+    
+    # print(parent_list)
+
+    
+    
+    # steam_info_data.update(parent_id, steam_info["response"])
+    # for i in steam_info["response"]["players"]:
+    #     ...
+    # for i in steam_info["response"]["players"]:
+    #     print(i.keys())
+    # for i in steam_info["response"]["players"]:
+    #     print("传入的steam_info")
+    #     print(i.keys())
+    
+    play_data = steam_info_data.compare(parent_id, steam_info["response"])
+    
+    msg = []
+
+    for entry in play_data:
+        player: Player = entry["player"]
+        old_player: Player = entry.get("old_player")
+        print(type(entry["player"]["nickname"]))
+        
+        player_name = entry["player"]["personaname"]
+        if entry["player"]["nickname"] is not None and entry["player"]["nickname"].strip() != "":
+            player_name = "*" + entry["player"]["nickname"]
+        
+        if entry["type"] == "start":
+            # msg.append(f"{player_name} 开始玩 {player['gameextrainfo']} 了")
+            msg.append("¿")
+            
+        elif entry["type"] == "stop":
+            play_time = entry["play_time"]
+            msg.append(f"{player_name} 玩了 {play_time} 后停止玩 {old_player['gameextrainfo']} 了")
+        elif entry["type"] == "change":
+            play_time = entry["play_time"]
+            msg.append(
+                f"{player_name} 玩了 {play_time} 停止玩 {old_player['gameextrainfo']}，开始玩 {player['gameextrainfo']} 了"
+            )
+        elif entry["type"] == "error":
+            f"出现错误！{player_name}\nNew: {player.get('gameextrainfo')}\nOld: {old_player.get('gameextrainfo')}"
+        else:
+            logger.error(f"未知的播报类型: {entry['type']}")
 
     print(msg)
     if msg == []:
         return None
+    images = []
+    for entry in play_data:
+        if entry["type"] == "start":
+            nickname = entry["player"]["personaname"]
+            if entry["player"]["nickname"] is not None and entry["player"]["nickname"].strip() != "":
+                nickname = "*"+entry["player"]["nickname"]
+            images.append(
+                draw_start_gaming(
+                    (
+                        await fetch_avatar(
+                            entry["player"], 
+                            f"{IMAGE_PATH}/steamInfo/cache/", 
+                            SYSTEM_PROXY["http"]
+                        )
+                    ), 
+                    nickname, 
+                    entry["player"]["gameextrainfo"]
+                )
+            )
 
-    # steam_status_data = [
-    #     await simplize_steam_player_data(player, config.proxy)
-    #     for player in steam_info["response"]["players"]
-    # ]
-    # steam_status_data = []
-    # user_SteamList = bind_data.get_info(parent_id)
-    # for player in steam_info["response"]["players"]:
-    #     nickname = None
-    #     for i in user_SteamList:
-    #         # print(i)
-    #         if i["steam_id"] == player["steamid"]:
-    #             if "nickname" in i.keys():
-    #                 nickname = i["nickname"]
-    #                 break
-    #             else:
-    #                 nickname = None
-    #                 break
-    #     player_data = await simplize_steam_player_data(player, config.proxy, nickname)
-    #     steam_status_data.append(player_data)
+    
+    send_msg = ""
+    for m in msg:
+        if m.replace("¿","") != "":
+            send_msg += m + ("\n" if msg.index(m) != len(msg) - 1 else "")
+    print(send_msg)
+    print(len(images))
+    # images = [draw_start_gaming((await fetch_avatar(entry["player"], f"{IMAGE_PATH}/steamInfo/cache/", SYSTEM_PROXY["http"])), entry["player"]["personaname"] if entry["player"]["nickname"] is None else entry["player"]["nickname"], entry["player"]["gameextrainfo"]) for entry in play_data if entry["type"] == "start"]
+    if images == []:
+        await bot.send_group_msg(group_id=parent_id, message=Message(send_msg))
+    else:
+        image = vertically_concatenate_images(images) if len(images) > 1 else images[0]
+        # print(image_to_base64(image))
+        await bot.send_group_msg(group_id=parent_id, message=Message(send_msg + imgMsg(b64=image_to_base64(image))))
+
+    # return steam_info
     
     
-    # parent_avatar, parent_name = parent_data.get(parent_id)
-
-    # image = draw_friends_status(parent_avatar, parent_name, steam_status_data)
-
-    # await bot.send_group_msg(
-    #     group_id=parent_id, message=Message("\n".join(msg) + MessageSegment.image(image_to_bytes(image)))
-    # )
-    # logs.info(f"群号: {parent_id} 的更新信息为: \n{msg}")
-    print(f"=-=-=-=-=-=-=-=-=-=-=-\n群号: {parent_id} 的更新信息为: \n{msg}")
+    # print(f"=-=-=-=-=-=-=-=-=-=-=-\n群号: {parent_id} 的更新信息为: \n{msg}")
     
-    await bot.send_group_msg(
-        group_id=parent_id, message=Message("\n".join(msg))
-    )
-
 
 @nonebot.get_driver().on_bot_connect
 async def init_steam_info():
-    for parent_id in bind_data.content:
+    for parent_id in parent_data.getAll():
         steam_ids = bind_data.get_all(parent_id)
 
         steam_info = await get_steam_users_info(
             steam_ids, config.steam_api_key, config.proxy
         )
-
+        for i in steam_info["response"]["players"]:
+            i["nickname"] = bind_data.get_nickname(parent_id, i["steamid"])
+            i["update_time"] = time.time()
+        
         steam_info_data.update(parent_id, steam_info["response"])
         steam_info_data.save()
 
@@ -117,11 +172,16 @@ async def update_steam_info():
         steam_info = await get_steam_users_info(
             steam_ids, config.steam_api_key, config.proxy
         )
-        print(f"群号: {group_id} 的玩家信息为: {steam_info}")
+        
+        for i in steam_info["response"]["players"]:
+            i["nickname"] = bind_data.get_nickname(group_id, i["steamid"])
+        
+        # print(f"群号: {group_id} 的玩家信息为: {steam_info}")
         await broadcast_steam_info(group_id, steam_info)
 
-        steam_info_data.update(group_id, steam_info["response"])
-        steam_info_data.save()
+        
+        # steam_info_data.update(group_id, steam_info["response"])
+        # steam_info_data.save()
     
     # for parent_id in bind_data.content:
     #     steam_ids = bind_data.get_all(str(parent_id))
@@ -241,21 +301,48 @@ async def add_handle(event: GroupMessageEvent, cmd_arg: Message = CommandArg()):
         bind_data.save()
         await add.finish(f"已为群员 {atid[0]} 绑定 Steam ID 为 {steam_id}")
 
+@unbind.handle()
+async def unbind_handle(event: GroupMessageEvent):
+    parent_id = str(event.group_id)
+    user_id = str(event.get_user_id())
+
+    if user_data := bind_data.get(parent_id, user_id):
+        if bind_data.delete(parent_id, user_id):
+            bind_data.save()
+            await unbind.finish("解绑成功")
+        else:
+            await unbind.finish("解绑失败")
+    else:
+        await unbind.finish("未绑定 Steam ID")
+
 @info.handle()
 async def info_handle(event: GroupMessageEvent):
     parent_id = str(event.group_id)
-
-    if user_data := bind_data.get(parent_id, event.get_user_id()):
-        steam_id = user_data["steam_id"]
-        steam_friend_code = str(int(steam_id) - STEAM_ID_OFFSET)
-
-        await info.finish(
-            f"你的 Steam ID: {steam_id}\n你的 Steam 好友代码: {steam_friend_code}"
-        )
-    else:
+    
+    user_data = bind_data.get(parent_id, event.get_user_id())
+    if user_data is None:
         await info.finish(
             "未绑定 Steam ID, 请使用 “/steambind [Steam ID 或 Steam好友代码]” 绑定 Steam ID"
         )
+    steam_id = user_data["steam_id"]
+    steam_friend_code = str(int(steam_id) - STEAM_ID_OFFSET)
+    await info.finish(
+        f"你的 Steam ID: {steam_id}\n你的 Steam 好友代码: {steam_friend_code}"
+    )
+    
+    
+
+    # if user_data := bind_data.get(parent_id, event.get_user_id()):
+    #     steam_id = user_data["steam_id"]
+    #     steam_friend_code = str(int(steam_id) - STEAM_ID_OFFSET)
+
+    #     await info.finish(
+    #         f"你的 Steam ID: {steam_id}\n你的 Steam 好友代码: {steam_friend_code}"
+    #     )
+    # else:
+    #     await info.finish(
+    #         "未绑定 Steam ID, 请使用 “/steambind [Steam ID 或 Steam好友代码]” 绑定 Steam ID"
+    #     )
 
 @check.handle()
 async def check_handle(event: GroupMessageEvent, arg: Message = CommandArg()):
@@ -263,46 +350,27 @@ async def check_handle(event: GroupMessageEvent, arg: Message = CommandArg()):
         return None
 
     parent_id = str(event.group_id)
-    user_id = str(event.get_user_id())
     
     steam_ids = bind_data.get_all(parent_id)
 
     steam_info = await get_steam_users_info(
         steam_ids, config.steam_api_key, config.proxy
     )
-
-    logger.debug(f"{parent_id} Players info: {steam_info}")
+    
+    for i in steam_info["response"]["players"]:
+            i["nickname"] = bind_data.get_nickname(parent_id, i["steamid"])
+    # logger.debug(f"{parent_id} Players info: {steam_info}")
 
     parent_avatar, parent_name = parent_data.get(parent_id)
-    
-    # steam_status_data = [
-    #     bind_data.get(parent_id, user_id)["nickname"] if "nickname" in bind_data.get(parent_id, user_id).keys() else None
-    #     await simplize_steam_player_data(player, config.proxy)
-    #     for player in steam_info["response"]["players"]
-    # ]
-    
-    steam_status_data = []
-    user_SteamList = bind_data.get_info(parent_id)
-    # print(user_SteamList)
-    
-    for player in steam_info["response"]["players"]:
-        nickname = None
-        for i in user_SteamList:
-            # print(i)
-            if i["steam_id"] == player["steamid"]:
-                if "nickname" in i.keys() and i["nickname"] != "":
-                    nickname = i["nickname"]
-                    break
-                else:
-                    nickname = None
-                    break
-        player_data = await simplize_steam_player_data(player, config.proxy, nickname)
-        steam_status_data.append(player_data)
-    # print(steam_status_data)
+
+    steam_status_data = [
+    await simplize_steam_player_data(player, SYSTEM_PROXY["http"], f"{IMAGE_PATH}/steamInfo/cache/")
+    for player in steam_info["response"]["players"]
+    ]
 
     image = draw_friends_status(parent_avatar, parent_name, steam_status_data)
 
-    await check.finish(MessageSegment.image(image_to_bytes(image)))
+    await check.finish(imgMsg(b64=image_to_base64(image)))
 
 @update_parent_info.handle()
 async def update_parent_info_handle(
@@ -345,14 +413,11 @@ async def setname_handle(
     if name == "":
         await setname.finish("请输入昵称")
 
-    if "nickname" not in user_data.keys():
-        user_data["nickname"] = name
-        bind_data.save()
-        await setname.finish("设置昵称成功")    
-    else:
-        user_data["nickname"] = name
-        bind_data.save()
-        await setname.finish("更新昵称成功")    
+    for i in user_data["bindGroups"]:
+        if i["group_id"] == parent_id:
+            i["nickname"] = name
+            bind_data.save()
+            await setname.finish("设置昵称成功")
 
 @setusername.handle()
 async def setusername_handle(
@@ -374,12 +439,9 @@ async def setusername_handle(
     
     if name == "":
         await setusername.finish("请输入昵称")
-
-    if "nickname" not in user_data.keys():
-        user_data["nickname"] = name
-        bind_data.save()
-        await setusername.finish(f"已为群员 {atid} 设置昵称成功")    
-    else:
-        user_data["nickname"] = name
-        bind_data.save()
-        await setusername.finish(f"已为群员 {atid} 更新昵称成功")
+    
+    for i in user_data["bindGroups"]:
+        if i["group_id"] == parent_id:
+            i["nickname"] = name
+            bind_data.save()
+            await setusername.finish("设置昵称成功")
