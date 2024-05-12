@@ -48,8 +48,10 @@ def is_command(message: str):
     for cmd in config.cmd_list:
         for key in cmd["command_name"]:
             if message.startswith(key) and bool(cmd["ifEnable"]):
-                message = message.replace(key, "").lstrip()
-                return {"status": True, "command": cmd["name"], "message": message}
+                print(f"检测到命令{cmd['name']}，消息为{message}")
+                msg_text = message.replace(key, "").lstrip()
+                print(f"处理后消息为{message}")
+                return {"status": True, "command": cmd["name"], "message": msg_text}
     return {"status": False, "command": None, "message": message}
 
 def get_server_index(server_name: str):
