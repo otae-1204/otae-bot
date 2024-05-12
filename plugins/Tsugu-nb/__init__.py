@@ -4,6 +4,7 @@ from nonebot.adapters import Event
 from nonebot.adapters.onebot.v11.message import MessageSegment
 from nonebot.adapters.onebot.v11.permission import GROUP_ADMIN, GROUP_OWNER, PRIVATE_FRIEND
 from nonebot.exception import FinishedException
+from nonebot.log import logger
 from .util import *
 from .api import *
 from .entity import User
@@ -55,11 +56,27 @@ async def _(event: Event):
     
     
     result = []
-    command = is_command(msg[1:].lower())
+    if "" in command_starts:
+        command = is_command(msg[0:].lower())
+    else:
+        command = is_command(msg[1:].lower())
     print(command)
     if not command["status"]:
         return
-    user = User(**(await get_user_data("onebot", event.get_user_id()))["data"])
+    
+    user_data = await get_user_data("onebot", event.get_user_id())
+    # print(user_data)
+    
+    if type(user_data) == dict and user_data["status"] == "success":
+        print("获取用户数据成功")
+        print(user_data["data"])
+        user = User(**user_data["data"])
+    elif type(user_data) == list:
+        await Tsugu.finish(user_data[0]["string"])
+    else:
+        await Tsugu.finish("未知错误")
+    
+    
     print(
         f"传入数据为:{command},{event.get_user_id()},onebot,{event.get_session_id()}")
     try:
@@ -99,9 +116,9 @@ async def _(event: Event):
                     # 取出msg中的数字
                     server_index = get_server_index(str(command["message"].replace(
                         event_id, ""))) if event_id else get_server_index(command["message"])
-                    result = await ycx_all(list(server_index), event_id)
+                    result = await ycx_all(server_index, event_id)
                 else:
-                    result = await ycx_all(config.default_servers, event_id)
+                    result = await ycx_all(user.server_mode, event_id)
             case "预测线":
                 text = command["message"]
                 server_index = config.default_servers[0]
@@ -200,25 +217,55 @@ async def _(event: Event):
                 result = await search_player(player_id, server_mode)
             case "设置主服务器":
                 # server_mode = get_server_index(command["message"]) if command["message"].endswith(tuple(server_list_name)) else 3
-                server_mode = command["message"].replace("国服", "cn").replace("日服", "jp").replace("台服", "tw").replace("国际服", "en").replace("韩服", "kr")
-                result = await set_server_mode("onebot", event.get_user_id(), str(server_mode))
-                print(result)
+                # server_mode = command["message"].replace("国服", "cn").replace("日服", "jp").replace("台服", "tw").replace("国际服", "en").replace("韩服", "kr")
+                # result = await set_server_mode("onebot", event.get_user_id(), str(server_mode))
+                # print(result)
+                server_str = command["message"]
+                server_mode = int(server_str) if server_str.isdigit() else get_server_index(server_str)
+                if server_mode == None:
+                    result = [{"type": "string", "string": f"服务器{server_str}不存在"}]
+                else:
+                    result = await change_user_data("onebot", event.get_user_id(), {"server_mode": server_mode})
                 if result["status"] == "success":
                     user.server_mode = server_mode
-                    result = [{"type": "string", "string": f"设置主服务器为{command['message']}成功"}]
+                    result = [{"type": "string", "string": f"设置主服务器为 {config.server_list[str(server_mode)][0]} 成功"}]
                 else:
                     result = [{"type": "string", "string": f"设置主服务器失败"}]
             case "设置默认服务器":
-                server_list = command["message"].replace("国服", "cn").replace("日服", "jp").replace("台服", "tw").replace("国际服", "en").replace("韩服", "kr")
-                result = await set_default_server("onebot", event.get_user_id(), server_list)
+                # server_list = command["message"].replace("国服", "cn").replace("日服", "jp").replace("台服", "tw").replace("国际服", "en").replace("韩服", "kr")
+                server_list = []
+                for i in command["message"].split(" "):
+                    # server_list.append(get_server_index(i) if i.endswith(tuple(server_list_name)) else i)
+                    if i.isdigit():
+                        server_list.append(int(i))
+                    elif i in server_list_name:
+                        server_list.append(get_server_index(i))
+                    else:
+                        result = [{"type": "string", "string": f"服务器{i}不存在"}]
+                        break
+                    # server_list.append(server_index)
+                
+                result = await change_user_data("onebot", event.get_user_id(), {"default_server": server_list})
+                # result = await set_default_server("onebot", event.get_user_id(), server_list)
                 if result["status"] == "success":
                     user.default_server = server_list
-                    result = [{"type": "string", "string": f"设置默认服务器为[{server_list}]成功"}]
+                    
+                    server_str = ""
+                    for i in server_list:
+                        if type(i) == int:
+                            server_str += config.server_list[str(i)][0] + " "
+                        else:
+                            server_str += i + " "
+                    
+                    result = [{"type": "string", "string": f"设置默认服务器为 {server_str}成功"}]
                 else:
                     result = [{"type": "string", "string": f"设置默认服务器失败"}]
             case "查询默认数据":
                 server_list = []
                 for i in user.default_server:
+                    if type(i) == str:
+                        server_list.append(i)
+                        continue
                     server_list.append(config.server_list[str(i)][0])
                 msg = f"您的主服务器为: {config.server_list[str(user.server_mode)][0]}\n您的默认服务器列表为: {server_list}"
                 # result = await get_user_data("onebot", event.get_user_id())
@@ -228,6 +275,7 @@ async def _(event: Event):
         return
     except Exception as e:
         print(e)
+        logger.error(e)
         result = [{"type": "string", "string": "参数错误"}]
 
     # print(result)

@@ -183,7 +183,7 @@ async def search_character(
 async def song_chart(
     default_servers: list[int],
     songId: int,
-    difficulty: str,
+    difficultyText: str,
 ):
     """
     说明:
@@ -199,7 +199,7 @@ async def song_chart(
     data = {
         "default_servers": default_servers,
         "songId": songId,
-        "difficultyText": difficulty,
+        "difficultyText": difficultyText,
         "compress": config.compress
     }
     result = await apost_api(url, data)
@@ -297,9 +297,9 @@ async def room_list(
         "roomList": roomList,
         "compress": config.compress
     }
-    print(data)
+    # print(data)
     result = await apost_api(url, data)
-    print(result)
+    # print(result)
     return result
 
 async def query_allRoom():
@@ -528,6 +528,32 @@ async def set_default_server(
     }
     result = await apost_api(url, data)
     return result
+
+async def change_user_data(
+    platform: str,
+    user_id: str,
+    update: dict
+):
+    """
+    说明:
+        修改用户数据
+    参数:
+        platform: 平台      如: onebot
+        user_id:  用户id    如: 2461673400
+        update:   更新数据  如: {"server_mode": 3}
+    返回:
+        dict: {'status': 'success'}
+    """
+    url = f"{config.api_base}/user/changeUserData"
+    data = {
+        "platform": platform,
+        "user_id": user_id,
+        "update": update
+    }
+    result = await apost_api(url, data)
+    return result
+
+
 
 async def ycm():
     """

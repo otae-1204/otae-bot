@@ -82,7 +82,6 @@ async def apost_api(api: str, data: dict) -> dict:
             print(response.status_code)
             if response.status_code == 400:
                 return [{"type": "string", "string": response.json()["data"]}]
-            
             response.raise_for_status()
             return response.json()
     except httpx.HTTPError as e:
