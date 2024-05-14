@@ -121,7 +121,7 @@ async def _(event: Event):
                     result = await ycx_all(user.server_mode, event_id)
             case "预测线":
                 text = command["message"]
-                server_index = config.default_servers[0]
+                server_index = user.server_mode
                 if command["message"].endswith(tuple(server_list_name)):
                     server_index = get_server_index(command["message"][-2:])
                     text = command["message"][:-2].rsplit()
@@ -274,7 +274,6 @@ async def _(event: Event):
     except FinishedException as Fe:
         return
     except Exception as e:
-        print(e)
         logger.error(e)
         result = [{"type": "string", "string": "参数错误"}]
 
