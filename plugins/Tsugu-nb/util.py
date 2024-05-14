@@ -43,7 +43,7 @@ def is_command(message: str):
         message (str): 用户发送的消息
 
     Returns:
-        dict: 是否为命令
+        dict: 是否为命令 {"status": bool, "command": str, "message": str}
     """
     for cmd in config.cmd_list:
         for key in cmd["command_name"]:
@@ -54,7 +54,16 @@ def is_command(message: str):
                 return {"status": True, "command": cmd["name"], "message": msg_text}
     return {"status": False, "command": None, "message": message}
 
-def get_server_index(server_name: str):
+def get_server_index(server_name: str) -> None | int:
+    """
+    获取服务器索引
+    
+    Args:
+        server_name (str): 服务器名称
+    
+    Returns:
+        None | int: 服务器索引
+    """
     for i in config.server_list:
         if server_name.strip() in config.server_list[i]:
             return int(i)

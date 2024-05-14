@@ -352,8 +352,7 @@ async def submit_room_number(
         "platform": platform,
         "user_id": user_id,
         "userName": userName,
-        "time": int(time.time()),
-        "bandoriStationToken": config.bandori_station_token
+        "time": int(time.time())
     }
     result = await apost_api(url, data)
     return result
