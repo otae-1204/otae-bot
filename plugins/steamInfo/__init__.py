@@ -33,8 +33,8 @@ setname = on_command("setname",aliases={"设置昵称"}, priority=1)
 setusername = on_command("setusername",aliases={"设置用户昵称"}, priority=1, permission=SUPERUSER)
 unbind = on_command("steamunbind",aliases={"解绑steam"}, priority=1)
 unbinduser = on_command("steamunbinduser",aliases={"解绑用户"}, priority=1, permission=SUPERUSER)
-delname = on_command("delname",aliases={"删除昵称"}, priority=1)
-delusername = on_command("delusername",aliases={"删除用户昵称"}, priority=1, permission=SUPERUSER)
+delname = on_command("delname",aliases={"删除昵称","unname"}, priority=1)
+delusername = on_command("delusername",aliases={"删除用户昵称","unusername"}, priority=1, permission=SUPERUSER)
 
 
 if hasattr(nonebot, "get_plugin_config"):
@@ -432,7 +432,7 @@ async def setusername_handle(
     name = arg.extract_plain_text().strip()
 
     user_data = bind_data.get(parent_id, atid)
-    # print(user_data)
+    print(user_data)
     
     if user_data is None:
         await setusername.finish("请先绑定steam")
@@ -445,3 +445,44 @@ async def setusername_handle(
             i["nickname"] = name
             bind_data.save()
             await setusername.finish("设置昵称成功")
+
+@delname.handle()
+async def delname_handle(
+    event: GroupMessageEvent, bot: Bot, arg: Message = CommandArg()
+):
+    parent_id = str(event.group_id)
+    user_id = str(event.get_user_id())
+    
+    user_data = bind_data.get(parent_id, user_id)
+    print(user_data)
+    
+    if user_data is None:
+        await delname.finish("请先绑定steam")
+    
+    for i in user_data["bindGroups"]:
+        if i["group_id"] == parent_id:
+            i["nickname"] = ""
+            bind_data.save()
+            await delname.finish("删除昵称成功")
+
+@delusername.handle()
+async def delusername_handle(
+    event: GroupMessageEvent, bot: Bot, arg: Message = CommandArg()
+):
+    parent_id = str(event.group_id)
+    
+    msg = str(event.get_message()).split(' ')[1]
+    atid = re.findall(pattern=r"\[CQ:at,qq=(.+?)\]",string=msg)[0]
+    print(atid)
+    
+    user_data = bind_data.get(parent_id, atid)
+    print(user_data)
+    
+    if user_data is None:
+        await delusername.finish("请先绑定steam")
+    
+    for i in user_data["bindGroups"]:
+        if i["group_id"] == parent_id:
+            i["nickname"] = ""
+            bind_data.save()
+            await delusername.finish("删除昵称成功")
