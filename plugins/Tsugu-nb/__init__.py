@@ -142,22 +142,22 @@ async def _(event: Event):
                     print(f"请求数据为:{server_index},{tier},{int(msgs[1])}")
                     result = await ycx(server_index, tier, int(msgs[1]))
             case "历史预测线":
-                print(command["message"])
+                # print(command["message"])
+                text = command["message"]
+                server_index = user.server_mode
                 if command["message"].endswith(tuple(server_list_name)):
                     server_index = get_server_index(command["message"][-2:])
-                    msg = command["message"][:-2].rsplit()
+                    text = command["message"][:-2].rsplit()
                 if command["message"].startswith(tuple(server_list_name)):
                     server_index = get_server_index(command["message"][:2])
-                    msg = command["message"][2:].lstrip()
-                print(f"server_index:{server_index}")
-                print(f"msg:{msg},type:{type(msg)}")
-                if type(msg) == str:
-                    msgs = msg.split(" ")
+                    text = command["message"][2:].lstrip()
+                # print(f"server_index:{server_index}")
+                # print(f"msg:{msg},type:{type(msg)}")
+                if type(text) == str:
+                    msgs = text.split(" ")
                 else:
-                    msgs = msg
-                print(f"msgs:{msgs}")
+                    msgs = text
                 tier = int(msgs[0])
-                print(f"tier:{tier}")
                 if len(msgs) == 1:
                     print(f"请求数据为:{server_index},{tier}")
                     result = await lsycx(server_index, tier)
