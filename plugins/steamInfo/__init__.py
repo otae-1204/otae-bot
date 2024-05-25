@@ -119,6 +119,7 @@ async def broadcast_steam_info(parent_id: str, steam_info: PlayerSummaries):
                     entry["player"]["gameextrainfo"]
                 )
             )
+            
 
     
     send_msg = ""
@@ -155,6 +156,7 @@ async def init_steam_info():
         
         steam_info_data.update(parent_id, steam_info["response"])
         steam_info_data.save()
+
 
 
 @scheduler.scheduled_job(
@@ -413,6 +415,9 @@ async def setname_handle(
     if name == "":
         await setname.finish("请输入昵称")
 
+    if len(name) > 16:
+        await setname.finish("昵称长度不能超过16个字符")
+    
     for i in user_data["bindGroups"]:
         if i["group_id"] == parent_id:
             i["nickname"] = name
