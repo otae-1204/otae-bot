@@ -8,3 +8,4 @@ Test/
 .vscode/
 plugins/steamInfo/config.py
 old/
+.VSCodeCounter
