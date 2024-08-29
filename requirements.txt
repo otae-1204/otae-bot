@@ -21,3 +21,4 @@ colorlog
 tsugu
 aiohttp
 selenium
+mcstatus
