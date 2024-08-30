@@ -100,7 +100,7 @@ async def handle_server_ping(bot: Bot, event: Event, cmd_arg: Message = CommandA
                         "address": name,
                         "info": "出现未知错误"
                     })
-            server_names.remove(name)
+                server_names.remove(name)
 
         server_list = [get_server_address(group_id, server_name) for server_name in server_names]
         for server in server_list:

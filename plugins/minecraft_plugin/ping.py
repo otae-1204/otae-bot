@@ -74,5 +74,3 @@ def base64_to_image(base64_str: str) -> Image.Image:
     image_data = BytesIO(byte_data)
     img = Image.open(image_data)
     return img
-
-ping('1.yamamoto2.net:2010', 'bedrock')
