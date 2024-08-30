@@ -35,6 +35,9 @@ update_server_A = on_command(
 ping_list = on_command(
     "pinglist", aliases={"Pinglist", "PING_LIST", "ping_list", "pl", "Ping_List", "PL"}, priority=5, block=True)
 
+add_nickname = on_command(
+    "addnickname", aliases={"Addnickname", "ADD_NICKNAME", "add_nickname", "an", "Add_Nickname", "AN"}, priority=5, block=True)
+
 
 @server_ping.handle()
 async def handle_server_ping(bot: Bot, event: Event, cmd_arg: Message = CommandArg()):
@@ -54,6 +57,7 @@ async def handle_server_ping(bot: Bot, event: Event, cmd_arg: Message = CommandA
                 result = ping(server["address"], server["type"])
                 results.append({
                     "name": server["name"],
+                    "nickname": server.get("nickname", []),
                     "address": server["address"],
                     "info": result
                 })
@@ -61,6 +65,7 @@ async def handle_server_ping(bot: Bot, event: Event, cmd_arg: Message = CommandA
                 logger.error(f"查询{server['address']}失败")
                 results.append({
                     "name": server["name"],
+                    "nickname": server.get("nickname", []),
                     "address": server["address"],
                     "info": "查询失败"
                 })
@@ -68,6 +73,7 @@ async def handle_server_ping(bot: Bot, event: Event, cmd_arg: Message = CommandA
                 logger.error(f"查询{server['address']}失败，错误信息：{e}")
                 results.append({
                     "name": server["name"],
+                    "nickname": server.get("nickname", []),
                     "address": server["address"],
                     "info": "出现未知错误"
                 })
@@ -108,6 +114,7 @@ async def handle_server_ping(bot: Bot, event: Event, cmd_arg: Message = CommandA
                 result = ping(server["address"], server["type"])
                 results.append({
                     "name": server["name"],
+                    "nickname": server.get("nickname", []),
                     "address": server["address"],
                     "info": result
                 })
@@ -115,6 +122,7 @@ async def handle_server_ping(bot: Bot, event: Event, cmd_arg: Message = CommandA
                 logger.error(f"查询{server['address']}失败")
                 results.append({
                     "name": server["name"],
+                    "nickname": server.get("nickname", []),
                     "address": server["address"],
                     "info": "查询失败"
                 })
@@ -196,8 +204,27 @@ async def handle_ping_list(bot: Bot, event: Event):
         await ping_list.finish("当前没有设置服务器,请使用</addserver>添加服务器")
     msg = "当前服务器列表：\n"
     for server in server_list:
-        msg += f"{server['name']}：{server['address']}\n"
+        msg += f"{server['name']}"
+        if server.get('nickname'):
+            msg += f"({', '.join(server['nickname'])})"
+        msg += f":\n{server['address']}\n"
     await ping_list.finish(msg)
+
+@add_nickname.handle()
+async def handle_add_nickname(bot: Bot, event: Event, cmd_arg: Message = CommandArg()):
+    group_id = event.get_session_id().split("_")[1]
+    message = cmd_arg.extract_plain_text()
+    if not message:
+        await add_nickname.finish("请输入服务器名称和服务器昵称")
+    param = message.split(" ")
+    if len(param) != 2:
+        await add_nickname.finish("参数数量不正确，请使用</addnickname [name] [nickname]>添加")
+    server_name, nickname = param
+    result = set_server_nickname(group_id, server_name, nickname)
+    if result['status']:
+        await add_nickname.finish(f"已添加{nickname}为{server_name}的昵称")
+    else:
+        await add_nickname.finish(f"添加失败，{result['msg']}")
 
 
 # @scheduler.scheduled_job("interval", minutes=60, id="minecraft_plugin")
@@ -216,9 +243,17 @@ def get_result_msg(results):
         for result in results:
             i += 1
             if result['info'] is None:
-                msg += f"服务器名称：{result['name']}\n服务器地址：{result['address']}\n服务器状态：服务器未开启或地址错误\n\n"
+                msg += f"服务器名称：{result['name']}\n服务器地址：{result['address']}\n服务器状态：服务器未开启或地址错误"
+                if i != end:
+                    msg += "\n\n"
                 continue
-            msg += f"服务器名称：{result['name']}\n服务器地址：{result['address']}\n服务器类型：{result['info']['server_type']}\n"
+            
+            msg += f"服务器名称：{result['name']}"
+            if result.get('nickname'):
+                msg += f"({', '.join(result['nickname'])}):\n"
+            else:
+                msg += ":\n"
+            msg += f"服务器地址：{result['address']}\n服务器类型：{result['info']['server_type']}\n"
             if result['info'] == "查询失败":
                 msg += "服务器类型错误\n"
             elif result['info'] == "出现未知错误":

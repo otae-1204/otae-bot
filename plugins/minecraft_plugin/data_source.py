@@ -79,10 +79,40 @@ def get_server_address(group_id: int, server_name: str):
     if group_id not in config.plugin_content['group_server']:
         return None
     for server in config.plugin_content['group_server'][group_id]:
-        if server_name == server.get('name'):
+        if server_name == server.get('name') or server_name in server.get('nickname', []):
             return server
     return None
-    
+
+def set_server_nickname(group_id: int, server_name: str, nickname: str):
+    """
+    说明:
+        设置服务器昵称
+    参数:
+        :param group_id: 群号
+        :param server_name: 服务器名称
+        :param nickname: 服务器昵称
+    """
+    try:
+        group_id = str(group_id)
+        if group_id not in config.plugin_content['group_server']:
+            return
+        for server in config.plugin_content['group_server'][group_id]:
+            if server_name == server.get('name'):
+                nicknames = server.get('nickname', [])
+                if nickname in nicknames:
+                    return {'status': False, 'msg': '昵称已存在'}
+                if 'nickname' not in server:
+                    server['nickname'] = [nickname]
+                else:
+                    server['nickname'].append(nickname)
+                config.update()
+                return {'status': True, 'msg': '设置成功'}
+        return {'status': False, 'msg': f'名为{server_name}的服务器不存在'}
+    except Exception as e:
+        logger.error(f"设置服务器昵称失败，错误信息：{e}")
+        return {'status': False, 'msg': f'出现错误, 错误信息：{e}'}
+
+
 def update_server_address(group_id: int, server_name: str, server_address: str):
     """
     说明:
