@@ -36,14 +36,19 @@ def ping(server_address, server_type):
         # 服务器类型错误，抛出异常
         raise ServerError
     try:
-        status = vars(server.status())['raw']
+        try:
+            server_status = server.status()
+        except Exception as e:
+            # 服务器状态获取失败，抛出异常
+            return {"type": "error", "msg": f"服务器状态获取失败，错误信息：{e}", "name": server_address}
+        status = vars(server_status)['raw']
         flag = True
         for k, v in status.items():
             if k not in ['version', 'players', 'description', 'favicon', 'onforcesSecureChat', 'previewsChat']:
                 flag = False
             else:
                 flag = True
-        print(status)
+        # print(status)
         # print(status.items())
         try:
             players = [i["name"] for i in status["players"]["sample"]]
@@ -65,7 +70,7 @@ def ping(server_address, server_type):
         return server_info
     except TimeoutError:
         # 服务器超时，抛出异常
-        return None
+        return {"type": "error", "msg": "服务器链接超时"}
 
 
 def base64_to_image(base64_str: str) -> Image.Image:

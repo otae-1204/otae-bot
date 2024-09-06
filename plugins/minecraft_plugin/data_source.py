@@ -77,11 +77,11 @@ def get_server_address(group_id: int, server_name: str):
     """
     group_id = str(group_id)
     if group_id not in config.plugin_content['group_server']:
-        return None
+        return {"status": False, "msg": "未找到服务器", "servername": server_name}
     for server in config.plugin_content['group_server'][group_id]:
         if server_name == server.get('name') or server_name in server.get('nickname', []):
             return server
-    return None
+    return {"status": False, "msg": "未找到服务器", "servername": server_name}
 
 def set_server_nickname(group_id: int, server_name: str, nickname: str):
     """

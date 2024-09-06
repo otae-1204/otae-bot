@@ -55,6 +55,16 @@ async def handle_server_ping(bot: Bot, event: Event, cmd_arg: Message = CommandA
         for server in server_list:
             try:
                 result = ping(server["address"], server["type"])
+                # logger.info(result)
+                if result.get("type") == "error":
+                        results.append({
+                            "name": server.get("name"),
+                            "address": server.get("address"),
+                            "nickname": server.get("nickname", []),
+                            "info": None, 
+                            "msg": result.get("msg")
+                        })
+                        continue
                 results.append({
                     "name": server["name"],
                     "nickname": server.get("nickname", []),
@@ -70,6 +80,7 @@ async def handle_server_ping(bot: Bot, event: Event, cmd_arg: Message = CommandA
                     "info": "查询失败"
                 })
             except Exception as e:
+                traceback.print_exc()
                 logger.error(f"查询{server['address']}失败，错误信息：{e}")
                 results.append({
                     "name": server["name"],
@@ -77,16 +88,27 @@ async def handle_server_ping(bot: Bot, event: Event, cmd_arg: Message = CommandA
                     "address": server["address"],
                     "info": "出现未知错误"
                 })
+        # print(results)
         msg = get_result_msg(results)
         await server_ping.finish(msg)
     else:
         server_names = message.split(" ")
         results = []
+
+        # 检测是否有直接输入地址
         for name in server_names:
             # 检测是否包含. 如果包含则直接查询
             if "." in name:
                 try:
                     result = ping(name, "java")
+                    if result.get("type") == "error":
+                        results.append({
+                            "name": name,
+                            "address": name,
+                            "info": None, 
+                            "msg": result.get("msg")
+                        })
+                        continue
                     results.append({
                         "name": name,
                         "address": name,
@@ -100,6 +122,7 @@ async def handle_server_ping(bot: Bot, event: Event, cmd_arg: Message = CommandA
                         "info": "查询失败"
                     })
                 except Exception as e:
+                    traceback.print_exc()
                     logger.error(f"查询{name}失败，错误信息：{e}")
                     results.append({
                         "name": name,
@@ -108,8 +131,17 @@ async def handle_server_ping(bot: Bot, event: Event, cmd_arg: Message = CommandA
                     })
                 server_names.remove(name)
 
+        # 通过服务器名称查询
         server_list = [get_server_address(group_id, server_name) for server_name in server_names]
         for server in server_list:
+            if server.get("status") is False:
+                results.append({
+                    "name": server.get("servername"),
+                    "address": server.get("servername"),
+                    "info": None, 
+                    "msg": result.get("msg")
+                })
+                continue
             try:
                 result = ping(server["address"], server["type"])
                 results.append({
@@ -118,13 +150,22 @@ async def handle_server_ping(bot: Bot, event: Event, cmd_arg: Message = CommandA
                     "address": server["address"],
                     "info": result
                 })
-            except:
-                logger.error(f"查询{server['address']}失败")
+            except ServerError:
+                logger.error(f"查询{server['name']}失败")
                 results.append({
                     "name": server["name"],
                     "nickname": server.get("nickname", []),
                     "address": server["address"],
                     "info": "查询失败"
+                })
+            except Exception as e:
+                traceback.print_exc()
+                logger.error(f"查询{server['name']}失败，错误信息：{e}")
+                results.append({
+                    "name": server["name"],
+                    "nickname": server.get("nickname", []),
+                    "address": server["address"],
+                    "info": "出现未知错误"
                 })
         msg = get_result_msg(results)
         await server_ping.finish(msg)
@@ -241,9 +282,10 @@ def get_result_msg(results):
         i = 0
         end = len(results)
         for result in results:
+            # print("\n"+str(result)+"\n")
             i += 1
             if result['info'] is None:
-                msg += f"服务器名称：{result['name']}\n服务器地址：{result['address']}\n服务器状态：服务器未开启或地址错误"
+                msg += f"服务器名称：{result['name']}\n服务器地址：{result['address']}\n服务器状态：{result.get('msg')}"
                 if i != end:
                     msg += "\n\n"
                 continue
@@ -253,12 +295,13 @@ def get_result_msg(results):
                 msg += f"({', '.join(result['nickname'])}):\n"
             else:
                 msg += ":\n"
-            msg += f"服务器地址：{result['address']}\n服务器类型：{result['info']['server_type']}\n"
+            msg += f"服务器地址：{result['address']}\n"
             if result['info'] == "查询失败":
                 msg += "服务器类型错误\n"
             elif result['info'] == "出现未知错误":
                 msg += "查询失败\n"
             else:
+                msg += f"服务器类型：{result['info']['server_type']}\n"
                 msg += f"游戏版本：{result['info']['game_version']}\n"
                 msg += f"是否为原版服务器：{'是' if result['info']['is_vanilla'] else '否'}\n"
                 msg += f"玩家数：{result['info']['online_players']}/{result['info']['max_players']}\n"
