@@ -659,7 +659,7 @@ def get_server_info_list(message: str, group_id) -> list:
         for name in ping_list:
             # 如果"."存在则说明是服务器地址
             if "." in name:
-                server_list.append({"name": name, "address": name})
+                server_list.append({"name": "java服务器", "address": name, "type": "java"})
             # 否则视为服务器名称
             else:
                 server = get_server_address(group_id, name)
